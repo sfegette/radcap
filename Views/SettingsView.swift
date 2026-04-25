@@ -44,6 +44,17 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Recording") {
+                    LabeledContent("Preview Opacity") {
+                        HStack {
+                            Slider(value: $settings.recordingPreviewOpacity, in: 0.15...1.0, step: 0.05)
+                            Text("\(Int(settings.recordingPreviewOpacity * 100))%")
+                                .frame(width: 44, alignment: .trailing)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+
                 Section("Teleprompter") {
                     LabeledContent("Font Size") {
                         HStack {
@@ -65,7 +76,7 @@ struct SettingsView: View {
 
                 Section("About") {
                     LabeledContent("Version", value: "0.1.0")
-                    LabeledContent("Bundle ID", value: "com.sfegette.madcap")
+                    LabeledContent("Bundle ID", value: "com.brilliantmindworks.radcap")
                 }
             }
             .formStyle(.grouped)

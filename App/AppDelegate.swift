@@ -2,29 +2,43 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let captureManager = CaptureManager()
+    private var coordinator: RecordingCoordinator!
     private var statusBarController: StatusBarController?
     private var floatingWindowController: FloatingWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Run as a background/accessory app — no Dock icon
         NSApp.setActivationPolicy(.accessory)
 
-        floatingWindowController = FloatingWindowController(captureManager: captureManager)
+        coordinator = RecordingCoordinator(captureManager: captureManager)
+        floatingWindowController = FloatingWindowController(captureManager: captureManager, coordinator: coordinator)
         statusBarController = StatusBarController(captureManager: captureManager)
+
+        coordinator.floatingWindowController = floatingWindowController
+        statusBarController?.coordinator = coordinator
 
         statusBarController?.onToggleWindow = { [weak self] in
             self?.floatingWindowController?.toggle()
         }
 
-        // Show window at launch
         floatingWindowController?.show()
+
+        GlobalHotkeyManager.shared.action = { [weak self] in
+            guard let self else { return }
+            if self.captureManager.isRecording {
+                self.coordinator.stopFlow()
+            } else {
+                self.coordinator.startFlow()
+            }
+        }
+        GlobalHotkeyManager.shared.register()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        false // keep alive as a menubar app
+        false
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         captureManager.stopRecording()
+        GlobalHotkeyManager.shared.unregister()
     }
 }

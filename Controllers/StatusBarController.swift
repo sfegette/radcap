@@ -8,6 +8,7 @@ final class StatusBarController {
     private var blinkOn = true
 
     var onToggleWindow: (() -> Void)?
+    weak var coordinator: RecordingCoordinator?
 
     init(captureManager: CaptureManager) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -51,6 +52,13 @@ final class StatusBarController {
     private func showContextMenu() {
         let menu = NSMenu()
 
+        if coordinator?.captureManager.isRecording == true {
+            let stopItem = NSMenuItem(title: "■ Stop Recording", action: #selector(stopRecording), keyEquivalent: "")
+            stopItem.target = self
+            menu.addItem(stopItem)
+            menu.addItem(.separator())
+        }
+
         let windowItem = NSMenuItem(title: "Show / Hide Window", action: #selector(toggleWindow), keyEquivalent: "")
         windowItem.target = self
         menu.addItem(windowItem)
@@ -63,7 +71,8 @@ final class StatusBarController {
         statusItem.menu = nil
     }
 
-    @objc private func toggleWindow() { onToggleWindow?() }
+    @objc private func toggleWindow()  { onToggleWindow?() }
+    @objc private func stopRecording() { coordinator?.stopFlow() }
 
     // MARK: - Icon
 

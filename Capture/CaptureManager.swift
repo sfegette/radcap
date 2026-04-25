@@ -19,6 +19,11 @@ final class CaptureManager: NSObject, ObservableObject {
     @Published var audioFormat: AudioFormat = .m4a
     @Published var sessionRunning = false
     @Published var lastError: String?
+    @Published var isSpeaking = false
+    private(set) var windowVisible = false
+
+    private var speakingHoldTimer: Timer?
+    private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
 
     // MARK: - Capture Session (session-queue only)
 
@@ -113,15 +118,35 @@ final class CaptureManager: NSObject, ObservableObject {
             deviceTypes: micTypes, mediaType: .audio, position: .unspecified
         ).devices
 
-        DispatchQueue.main.async {
-            self.availableCameras = cameras
-            if self.selectedCamera == nil {
-                self.selectedCamera = AVCaptureDevice.default(for: .video) ?? cameras.first
+        // Already called on main thread; set synchronously so configureSession()
+        // sees the devices when it dispatches to sessionQueue immediately after.
+        availableCameras = cameras
+        if selectedCamera == nil {
+            selectedCamera = AVCaptureDevice.default(for: .video) ?? cameras.first
+        }
+        availableMicrophones = mics
+        if selectedMicrophone == nil {
+            selectedMicrophone = AVCaptureDevice.default(for: .audio) ?? mics.first
+        }
+    }
+
+    // MARK: - Session Lifecycle
+
+    func setWindowVisible(_ visible: Bool) {
+        windowVisible = visible
+        updateSessionState()
+    }
+
+    private func updateSessionState() {
+        let shouldRun = windowVisible || isRecording
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if shouldRun {
+                if !self.captureSession.isRunning { self.captureSession.startRunning() }
+            } else {
+                if self.captureSession.isRunning { self.captureSession.stopRunning() }
             }
-            self.availableMicrophones = mics
-            if self.selectedMicrophone == nil {
-                self.selectedMicrophone = AVCaptureDevice.default(for: .audio) ?? mics.first
-            }
+            DispatchQueue.main.async { self.sessionRunning = self.captureSession.isRunning }
         }
     }
 
@@ -295,6 +320,7 @@ final class CaptureManager: NSObject, ObservableObject {
         }
 
         isRecording = true
+        updateSessionState()
         recordingDuration = 0
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.recordingDuration += 1
@@ -304,8 +330,12 @@ final class CaptureManager: NSObject, ObservableObject {
     func stopRecording() {
         guard isRecording else { return }
         isRecording = false
+        updateSessionState()
         durationTimer?.invalidate()
         durationTimer = nil
+        speakingHoldTimer?.invalidate()
+        speakingHoldTimer = nil
+        isSpeaking = false
 
         outputQueue.async { [weak self] in
             guard let self else { return }
@@ -440,9 +470,47 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             }
 
         } else if output === audioDataOutput {
+            measureAudioLevel(sampleBuffer)
             guard let aInput = audioWriterInput,
                   aInput.isReadyForMoreMediaData else { return }
             aInput.append(sampleBuffer)
+        }
+    }
+
+    // Called on outputQueue — dispatches result to main thread.
+    private func measureAudioLevel(_ sampleBuffer: CMSampleBuffer) {
+        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+        var totalLength = 0
+        var dataPointer: UnsafeMutablePointer<Int8>?
+        CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0,
+                                    lengthAtOffsetOut: nil,
+                                    totalLengthOut: &totalLength,
+                                    dataPointerOut: &dataPointer)
+        guard let ptr = dataPointer, totalLength > 0 else { return }
+        // macOS AVCapture delivers Float32 PCM from the microphone.
+        let count = totalLength / MemoryLayout<Float32>.stride
+        guard count > 0 else { return }
+        let samples = UnsafeBufferPointer(
+            start: UnsafeRawPointer(ptr).assumingMemoryBound(to: Float32.self),
+            count: count)
+        var sumSq: Float = 0
+        for s in samples { sumSq += s * s }
+        let rms = sqrt(sumSq / Float(count))
+        DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
+    }
+
+    // Hold "speaking" for 400ms after audio drops below threshold to smooth
+    // over natural breath gaps and brief mid-sentence pauses.
+    private func updateSpeakingState(rms: Float) {
+        if rms > speechThreshold {
+            speakingHoldTimer?.invalidate()
+            speakingHoldTimer = nil
+            if !isSpeaking { isSpeaking = true }
+        } else if isSpeaking, speakingHoldTimer == nil {
+            speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+                self?.isSpeaking = false
+                self?.speakingHoldTimer = nil
+            }
         }
     }
 

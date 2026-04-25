@@ -8,29 +8,45 @@
 
 /* Begin PBXBuildFile section */
 		123F2DC9E6E788B4CD8A5E2F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37BC900AE90F35DEB4B7D0B /* AppSettings.swift */; };
+		1AF64ED3E6BE8EE62187316F /* CountdownOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61BE6C3A82D485D6C46997F3 /* CountdownOverlayView.swift */; };
+		2EB3231428BC4DB8E04E521A /* RecordingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464F7A2E3238BF1704C84780 /* RecordingCoordinator.swift */; };
 		31E55A5A5A4E371E77D29909 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19DDC9809C625AECC47F717 /* ContentView.swift */; };
+		422BDCD440472A754593F489 /* CountdownWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 762C0A7C6F8BFD4B32D0EE95 /* CountdownWindowController.swift */; };
+		4AB67E2AD01B1B7B45D99ED7 /* GlobalHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0D3492427A4E1AA062EC95 /* GlobalHotkeyManager.swift */; };
 		6A22238C8FA717488ACE31AC /* FloatingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1665DED83FC318648533AD85 /* FloatingWindowController.swift */; };
+		75B438430EAE3DCC3D5E9F66 /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034B0C7DD9E8B50163D41B12 /* RecordingHUDController.swift */; };
 		79591BFBE12B3411C58B9D44 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */; };
 		87F157D0E389D70BBD1C9447 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD05FC25FF13770605826411 /* CaptureManager.swift */; };
+		993F705E86390CCF6DACDE5E /* TeleprompterPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DD148A0E58270E3FA3BD2F /* TeleprompterPillView.swift */; };
 		A9E1786E5B1D0435DB6151F7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2EA5517E1970AE34A956951A /* Assets.xcassets */; };
 		ABCC0FB2AC490F03580ECA59 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */; };
 		AF9ADB5F2374F6FC9AE0DB7A /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACA173DECF1829199972AA7 /* StatusBarController.swift */; };
+		CBD0FB01819287866FC533F7 /* SpeedChangeOverlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2917ED29ACDFE6B5373C3B9 /* SpeedChangeOverlayController.swift */; };
 		EBF4CD36AC0418B7E1D5046B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */; };
 		ED02791ED16BA62B64411905 /* TeleprompterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */; };
+		F6A443559D141B8E071FA137 /* RecordingPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A88A1F6BCB6ABF480FB1504 /* RecordingPreviewView.swift */; };
 		FFE200C2678B3D4A848C7EFE /* MadcapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		034B0C7DD9E8B50163D41B12 /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
 		0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MadcapApp.swift; sourceTree = "<group>"; };
 		1665DED83FC318648533AD85 /* FloatingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowController.swift; sourceTree = "<group>"; };
 		2EA5517E1970AE34A956951A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterView.swift; sourceTree = "<group>"; };
 		3ACA173DECF1829199972AA7 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		464F7A2E3238BF1704C84780 /* RecordingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingCoordinator.swift; sourceTree = "<group>"; };
+		5A88A1F6BCB6ABF480FB1504 /* RecordingPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPreviewView.swift; sourceTree = "<group>"; };
 		5E7EDBD04EFCCEABCE5DEC22 /* Radcap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Radcap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		61BE6C3A82D485D6C46997F3 /* CountdownOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownOverlayView.swift; sourceTree = "<group>"; };
+		6C0D3492427A4E1AA062EC95 /* GlobalHotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeyManager.swift; sourceTree = "<group>"; };
+		762C0A7C6F8BFD4B32D0EE95 /* CountdownWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownWindowController.swift; sourceTree = "<group>"; };
 		93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
 		AD05FC25FF13770605826411 /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
+		D2917ED29ACDFE6B5373C3B9 /* SpeedChangeOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedChangeOverlayController.swift; sourceTree = "<group>"; };
 		D37BC900AE90F35DEB4B7D0B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		E2DD148A0E58270E3FA3BD2F /* TeleprompterPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterPillView.swift; sourceTree = "<group>"; };
 		F19DDC9809C625AECC47F717 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -48,7 +64,9 @@
 			isa = PBXGroup;
 			children = (
 				93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */,
+				6C0D3492427A4E1AA062EC95 /* GlobalHotkeyManager.swift */,
 				0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */,
+				464F7A2E3238BF1704C84780 /* RecordingCoordinator.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -56,7 +74,10 @@
 		604727B7266953C5478C8EF3 /* Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				762C0A7C6F8BFD4B32D0EE95 /* CountdownWindowController.swift */,
 				1665DED83FC318648533AD85 /* FloatingWindowController.swift */,
+				034B0C7DD9E8B50163D41B12 /* RecordingHUDController.swift */,
+				D2917ED29ACDFE6B5373C3B9 /* SpeedChangeOverlayController.swift */,
 				3ACA173DECF1829199972AA7 /* StatusBarController.swift */,
 			);
 			path = Controllers;
@@ -67,7 +88,10 @@
 			children = (
 				9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */,
 				F19DDC9809C625AECC47F717 /* ContentView.swift */,
+				61BE6C3A82D485D6C46997F3 /* CountdownOverlayView.swift */,
+				5A88A1F6BCB6ABF480FB1504 /* RecordingPreviewView.swift */,
 				FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */,
+				E2DD148A0E58270E3FA3BD2F /* TeleprompterPillView.swift */,
 				3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */,
 			);
 			path = Views;
@@ -133,7 +157,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					B87D045DF6D518AB0382877B = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = MX6K4V7DP6;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -178,10 +202,18 @@
 				EBF4CD36AC0418B7E1D5046B /* CameraPreviewView.swift in Sources */,
 				87F157D0E389D70BBD1C9447 /* CaptureManager.swift in Sources */,
 				31E55A5A5A4E371E77D29909 /* ContentView.swift in Sources */,
+				1AF64ED3E6BE8EE62187316F /* CountdownOverlayView.swift in Sources */,
+				422BDCD440472A754593F489 /* CountdownWindowController.swift in Sources */,
 				6A22238C8FA717488ACE31AC /* FloatingWindowController.swift in Sources */,
+				4AB67E2AD01B1B7B45D99ED7 /* GlobalHotkeyManager.swift in Sources */,
 				FFE200C2678B3D4A848C7EFE /* MadcapApp.swift in Sources */,
+				2EB3231428BC4DB8E04E521A /* RecordingCoordinator.swift in Sources */,
+				75B438430EAE3DCC3D5E9F66 /* RecordingHUDController.swift in Sources */,
+				F6A443559D141B8E071FA137 /* RecordingPreviewView.swift in Sources */,
 				ABCC0FB2AC490F03580ECA59 /* SettingsView.swift in Sources */,
+				CBD0FB01819287866FC533F7 /* SpeedChangeOverlayController.swift in Sources */,
 				AF9ADB5F2374F6FC9AE0DB7A /* StatusBarController.swift in Sources */,
+				993F705E86390CCF6DACDE5E /* TeleprompterPillView.swift in Sources */,
 				ED02791ED16BA62B64411905 /* TeleprompterView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -198,7 +230,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MX6K4V7DP6;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -207,7 +239,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brilliantmindworks.radcap;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5;
 			};
@@ -278,7 +310,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MX6K4V7DP6;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -287,7 +319,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brilliantmindworks.radcap;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5;
 			};
