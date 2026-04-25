@@ -27,8 +27,8 @@ final class CaptureManager: NSObject, ObservableObject {
     private var currentAudioInput: AVCaptureDeviceInput?
     private let videoDataOutput = AVCaptureVideoDataOutput()
     private let audioDataOutput = AVCaptureAudioDataOutput()
-    private let sessionQueue = DispatchQueue(label: "com.sfegette.madcap.session", qos: .userInitiated)
-    private let outputQueue  = DispatchQueue(label: "com.sfegette.madcap.output",  qos: .userInitiated)
+    private let sessionQueue = DispatchQueue(label: "com.sfegette.radcap.session", qos: .userInitiated)
+    private let outputQueue  = DispatchQueue(label: "com.sfegette.radcap.output",  qos: .userInitiated)
 
     // MARK: - Recording State (output-queue only)
 
@@ -352,7 +352,7 @@ final class CaptureManager: NSObject, ObservableObject {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
         let ext = recordingMode == .audioOnly ? audioFormat.fileExtension : "mov"
-        let name = "Madcap_\(fmt.string(from: Date())).\(ext)"
+        let name = "Radcap_\(fmt.string(from: Date())).\(ext)"
         return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
     }
 

@@ -79,7 +79,7 @@ struct SettingsView: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = "Select Folder"
-        panel.message = "Choose where Madcap saves recordings"
+        panel.message = "Choose where Radcap saves recordings"
         if panel.runModal() == .OK, let url = panel.url {
             settings.outputDirectory = url
         }

@@ -38,7 +38,7 @@ final class FloatingWindowController {
             backing: .buffered,
             defer: false
         )
-        p.title = "Madcap"
+        p.title = "Radcap"
         p.isFloatingPanel = true
         p.level = .floating
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]

@@ -56,7 +56,7 @@ final class StatusBarController {
         menu.addItem(windowItem)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Madcap", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Radcap", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
         statusItem.button?.performClick(nil)

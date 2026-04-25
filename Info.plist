@@ -11,7 +11,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Madcap</string>
+    <string>Radcap</string>
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
@@ -25,9 +25,9 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSCameraUsageDescription</key>
-    <string>Madcap uses your camera to record video.</string>
+    <string>Radcap uses your camera to record video.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Madcap uses your microphone to record audio.</string>
+    <string>Radcap uses your microphone to record audio.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 sfegette. All rights reserved.</string>
     <key>NSPrincipalClass</key>

@@ -1,0 +1,383 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		123F2DC9E6E788B4CD8A5E2F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37BC900AE90F35DEB4B7D0B /* AppSettings.swift */; };
+		31E55A5A5A4E371E77D29909 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19DDC9809C625AECC47F717 /* ContentView.swift */; };
+		6A22238C8FA717488ACE31AC /* FloatingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1665DED83FC318648533AD85 /* FloatingWindowController.swift */; };
+		79591BFBE12B3411C58B9D44 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */; };
+		87F157D0E389D70BBD1C9447 /* CaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD05FC25FF13770605826411 /* CaptureManager.swift */; };
+		A9E1786E5B1D0435DB6151F7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2EA5517E1970AE34A956951A /* Assets.xcassets */; };
+		ABCC0FB2AC490F03580ECA59 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */; };
+		AF9ADB5F2374F6FC9AE0DB7A /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ACA173DECF1829199972AA7 /* StatusBarController.swift */; };
+		EBF4CD36AC0418B7E1D5046B /* CameraPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */; };
+		ED02791ED16BA62B64411905 /* TeleprompterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */; };
+		FFE200C2678B3D4A848C7EFE /* MadcapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MadcapApp.swift; sourceTree = "<group>"; };
+		1665DED83FC318648533AD85 /* FloatingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowController.swift; sourceTree = "<group>"; };
+		2EA5517E1970AE34A956951A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeleprompterView.swift; sourceTree = "<group>"; };
+		3ACA173DECF1829199972AA7 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		5E7EDBD04EFCCEABCE5DEC22 /* Radcap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Radcap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
+		AD05FC25FF13770605826411 /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
+		D37BC900AE90F35DEB4B7D0B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		F19DDC9809C625AECC47F717 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		3A96378F5D1660922E15BA6A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5E7EDBD04EFCCEABCE5DEC22 /* Radcap.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4399AE4BA8360D7C02A1F7B7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */,
+				0EE25F66ABBDC70B0C0DE268 /* MadcapApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		604727B7266953C5478C8EF3 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				1665DED83FC318648533AD85 /* FloatingWindowController.swift */,
+				3ACA173DECF1829199972AA7 /* StatusBarController.swift */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		975A260DFF0CDCC8E679BAF7 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */,
+				F19DDC9809C625AECC47F717 /* ContentView.swift */,
+				FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */,
+				3A42059A51F2A4A88E364BEA /* TeleprompterView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BECAB3506B146BB0F7478B2E /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				AD05FC25FF13770605826411 /* CaptureManager.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		C4D7E9B57437621E3BC08F54 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D37BC900AE90F35DEB4B7D0B /* AppSettings.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D5693FCC1EE7AA460C20A923 = {
+			isa = PBXGroup;
+			children = (
+				2EA5517E1970AE34A956951A /* Assets.xcassets */,
+				4399AE4BA8360D7C02A1F7B7 /* App */,
+				BECAB3506B146BB0F7478B2E /* Capture */,
+				604727B7266953C5478C8EF3 /* Controllers */,
+				C4D7E9B57437621E3BC08F54 /* Models */,
+				975A260DFF0CDCC8E679BAF7 /* Views */,
+				3A96378F5D1660922E15BA6A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B87D045DF6D518AB0382877B /* Radcap */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA6746CA58737716E6F5C10B /* Build configuration list for PBXNativeTarget "Radcap" */;
+			buildPhases = (
+				9C56F5F41B8D2ED7A59610FD /* Sources */,
+				F182435ED63DB640E43BAFEF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Radcap;
+			packageProductDependencies = (
+			);
+			productName = Radcap;
+			productReference = 5E7EDBD04EFCCEABCE5DEC22 /* Radcap.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B8E0E1A9659B21DE63E4A2BF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					B87D045DF6D518AB0382877B = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E9686F8AE67B011A59956513 /* Build configuration list for PBXProject "Radcap" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D5693FCC1EE7AA460C20A923;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3A96378F5D1660922E15BA6A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B87D045DF6D518AB0382877B /* Radcap */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F182435ED63DB640E43BAFEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A9E1786E5B1D0435DB6151F7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9C56F5F41B8D2ED7A59610FD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				79591BFBE12B3411C58B9D44 /* AppDelegate.swift in Sources */,
+				123F2DC9E6E788B4CD8A5E2F /* AppSettings.swift in Sources */,
+				EBF4CD36AC0418B7E1D5046B /* CameraPreviewView.swift in Sources */,
+				87F157D0E389D70BBD1C9447 /* CaptureManager.swift in Sources */,
+				31E55A5A5A4E371E77D29909 /* ContentView.swift in Sources */,
+				6A22238C8FA717488ACE31AC /* FloatingWindowController.swift in Sources */,
+				FFE200C2678B3D4A848C7EFE /* MadcapApp.swift in Sources */,
+				ABCC0FB2AC490F03580ECA59 /* SettingsView.swift in Sources */,
+				AF9ADB5F2374F6FC9AE0DB7A /* StatusBarController.swift in Sources */,
+				ED02791ED16BA62B64411905 /* TeleprompterView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		11D5116D13AC0F2193588A00 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Radcap.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5;
+			};
+			name = Release;
+		};
+		181AA5EE1782F7AB14C0BD34 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F91684BBE2B76B9D5359AE16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Radcap.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5;
+			};
+			name = Debug;
+		};
+		FDE4B864274818115296D326 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CA6746CA58737716E6F5C10B /* Build configuration list for PBXNativeTarget "Radcap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F91684BBE2B76B9D5359AE16 /* Debug */,
+				11D5116D13AC0F2193588A00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E9686F8AE67B011A59956513 /* Build configuration list for PBXProject "Radcap" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE4B864274818115296D326 /* Debug */,
+				181AA5EE1782F7AB14C0BD34 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B8E0E1A9659B21DE63E4A2BF /* Project object */;
+}

@@ -1,4 +1,4 @@
-name: Madcap
+name: Radcap
 options:
   bundleIdPrefix: com.sfegette
   deploymentTarget:
@@ -6,7 +6,7 @@ options:
   createIntermediateGroups: true
 
 targets:
-  Madcap:
+  Radcap:
     type: application
     platform: macOS
     sources:
@@ -18,13 +18,13 @@ targets:
       - path: Assets.xcassets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.sfegette.madcap
+        PRODUCT_BUNDLE_IDENTIFIER: com.sfegette.radcap
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         SWIFT_VERSION: "5"
         INFOPLIST_FILE: Info.plist
-        CODE_SIGN_ENTITLEMENTS: Madcap.entitlements
+        CODE_SIGN_ENTITLEMENTS: Radcap.entitlements
         ENABLE_HARDENED_RUNTIME: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
