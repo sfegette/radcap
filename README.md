@@ -10,13 +10,13 @@ A macOS menubar app for recording webcam video and audio with a built-in voice-a
 
 Grab the latest build from the [Releases](https://github.com/sfegette/radcap/releases) page.
 
-1. Download `Radcap.zip` from the latest release.
-2. Unzip and drag **Radcap.app** to your `/Applications` folder.
+1. Download `Radcap-<version>.dmg` from the latest release.
+2. Open the DMG and drag **Radcap.app** to your `/Applications` folder.
 3. Double-click to launch — a camera icon will appear in the menu bar.
 
 **First launch:** macOS will ask for Camera and Microphone access. Both are required. If a permission prompt doesn't appear, open **System Settings → Privacy & Security** and grant access there.
 
-> Radcap is not yet notarized. On first launch, right-click the app and choose **Open** to bypass the Gatekeeper warning.
+> Radcap is notarized and Developer ID-signed. macOS will verify it automatically on first launch — no Gatekeeper workarounds needed.
 
 ---
 

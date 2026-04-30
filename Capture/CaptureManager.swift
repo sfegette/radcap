@@ -74,6 +74,14 @@ final class CaptureManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
+        NotificationCenter.default.addObserver(
+            forName: AVCaptureSession.runtimeErrorNotification,
+            object: captureSession,
+            queue: nil
+        ) { [weak self] note in
+            guard let error = note.userInfo?[AVCaptureSessionErrorKey] as? Error else { return }
+            DispatchQueue.main.async { self?.lastError = "Session error: \(error.localizedDescription)" }
+        }
         requestPermissionsAndConfigure()
     }
 
@@ -92,8 +100,19 @@ final class CaptureManager: NSObject, ObservableObject {
         }
 
         group.notify(queue: .main) { [weak self] in
-            self?.discoverDevices()
-            self?.configureSession()
+            guard let self else { return }
+            self.discoverDevices()
+
+            var denied: [String] = []
+            if AVCaptureDevice.authorizationStatus(for: .audio) == .denied {
+                denied.append("Microphone access denied — open System Settings → Privacy & Security → Microphone to enable it.")
+            }
+            if AVCaptureDevice.authorizationStatus(for: .video) == .denied {
+                denied.append("Camera access denied — open System Settings → Privacy & Security → Camera to enable it.")
+            }
+            if !denied.isEmpty { self.lastError = denied.joined(separator: "\n") }
+
+            self.configureSession()
         }
     }
 
