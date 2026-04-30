@@ -3,8 +3,9 @@ set -euo pipefail
 
 # Usage:
 #   ./scripts/release.sh           — builds NDD (Developer ID) + App Store exports
-#   ./scripts/release.sh --ndd     — NDD only
+#   ./scripts/release.sh --ndd     — NDD only, creates GitHub Release + uploads DMG
 #   ./scripts/release.sh --mas     — App Store only
+#   ./scripts/release.sh --ndd --no-github  — NDD only, skip GitHub Release
 #
 # First-time setup for notarytool (run once, stores credentials in Keychain):
 #   xcrun notarytool store-credentials "radcap-notary" \
@@ -13,6 +14,7 @@ set -euo pipefail
 #     --password "APP_SPECIFIC_PASSWORD"
 #
 # Generate an app-specific password at: appleid.apple.com → Sign-In and Security
+# GitHub CLI (gh) must be authenticated: gh auth login
 
 SCHEME="Radcap"
 PROJECT="Radcap.xcodeproj"
@@ -27,8 +29,14 @@ BUILD=$(defaults read "$ROOT_DIR/Info.plist" CFBundleVersion 2>/dev/null || echo
 
 DO_NDD=true
 DO_MAS=true
-if [[ "${1:-}" == "--ndd" ]]; then DO_MAS=false; fi
-if [[ "${1:-}" == "--mas" ]]; then DO_NDD=false; fi
+DO_GITHUB=true
+for arg in "$@"; do
+  case "$arg" in
+    --ndd)       DO_MAS=false ;;
+    --mas)       DO_NDD=false; DO_GITHUB=false ;;
+    --no-github) DO_GITHUB=false ;;
+  esac
+done
 
 echo "▶ Radcap $VERSION ($BUILD) — archive + export"
 mkdir -p "$BUILD_DIR"
@@ -69,6 +77,26 @@ if $DO_NDD; then
   DMG="$BUILD_DIR/Radcap-$VERSION.dmg"
   hdiutil create -volname "Radcap" -srcfolder "$APP" -ov -format UDZO "$DMG"
   echo "✅ NDD DMG ready: $DMG"
+
+  if $DO_GITHUB; then
+    if ! command -v gh &>/dev/null; then
+      echo "⚠️  gh CLI not found — skipping GitHub Release. Install with: brew install gh"
+    else
+      TAG="v$VERSION"
+      echo "▶ Creating GitHub Release $TAG..."
+      gh release create "$TAG" "$DMG" \
+        --repo sfegette/radcap \
+        --title "Radcap $VERSION" \
+        --notes "## Radcap $VERSION
+
+### Install
+Download \`Radcap-$VERSION.dmg\`, open it, and drag Radcap to Applications.
+
+macOS will verify the app on first launch — if prompted, right-click → Open." \
+        --latest
+      echo "✅ GitHub Release $TAG published"
+    fi
+  fi
 fi
 
 # --- App Store ---
