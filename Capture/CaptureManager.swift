@@ -173,6 +173,50 @@ final class CaptureManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Mic Authorization Error Recovery
+
+    // AVErrorApplicationIsNotAuthorizedToUseDevice (-11852) fires when the TCC grant was
+    // created by a differently-signed binary (e.g. debug → Developer ID release). The
+    // bundle-level authorizationStatus says "authorized" but device access is actually blocked.
+    // Resetting the TCC entry forces a fresh prompt on next launch.
+    private func handleMicInputError(_ error: Error, deviceName: String) {
+        let code = (error as NSError).code
+        log.error("AVCaptureDeviceInput(mic) failed for '\(deviceName)': \(error)")
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if code == -11852 {
+                self.lastError = "Microphone access needs to be reset."
+                self.showMicResetAlert()
+            } else {
+                self.lastError = "Could not open microphone \"\(deviceName)\": \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func showMicResetAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Microphone Access Needs Reset"
+        alert.informativeText = """
+            Radcap's microphone permission has become stale — this can happen after updating or reinstalling the app.
+
+            To fix it:
+            1. Open System Settings → Privacy & Security → Microphone
+            2. Toggle Radcap off, then back on
+            3. Relaunch Radcap
+
+            Or run in Terminal, then relaunch:
+                tccutil reset Microphone com.brilliantmindworks.radcap
+            """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open Mic Settings")
+        alert.addButton(withTitle: "Dismiss")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(
+                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
+            )
+        }
+    }
+
     // MARK: - Session Configuration
 
     func configureSession() {
@@ -199,7 +243,7 @@ final class CaptureManager: NSObject, ObservableObject {
                         log.error("canAddInput returned false for mic: \(mic.localizedName)")
                     }
                 } catch {
-                    log.error("AVCaptureDeviceInput(mic) failed: \(error)")
+                    self.handleMicInputError(error, deviceName: mic.localizedName)
                 }
             } else {
                 log.error("selectedMicrophone is nil during configureSession")
@@ -267,7 +311,7 @@ final class CaptureManager: NSObject, ObservableObject {
                 }
             } catch {
                 self.currentAudioInput = nil
-                log.error("AVCaptureDeviceInput failed switching to \(device.localizedName): \(error)")
+                self.handleMicInputError(error, deviceName: device.localizedName)
             }
             self.captureSession.commitConfiguration()
         }
