@@ -3,6 +3,9 @@ import Combine
 import CoreMedia
 import CoreVideo
 import AppKit
+import OSLog
+
+private let log = Logger(subsystem: "com.brilliantmindworks.radcap", category: "CaptureManager")
 
 final class CaptureManager: NSObject, ObservableObject {
 
@@ -24,6 +27,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
     private var speakingHoldTimer: Timer?
     private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
+    private var rmsLogCounter = 0
 
     // MARK: - Capture Session (session-queue only)
 
@@ -184,11 +188,21 @@ final class CaptureManager: NSObject, ObservableObject {
                 self.currentVideoInput = input
             }
 
-            if let mic = self.selectedMicrophone,
-               let input = try? AVCaptureDeviceInput(device: mic),
-               self.captureSession.canAddInput(input) {
-                self.captureSession.addInput(input)
-                self.currentAudioInput = input
+            if let mic = self.selectedMicrophone {
+                do {
+                    let input = try AVCaptureDeviceInput(device: mic)
+                    if self.captureSession.canAddInput(input) {
+                        self.captureSession.addInput(input)
+                        self.currentAudioInput = input
+                        log.info("Audio input added: \(mic.localizedName)")
+                    } else {
+                        log.error("canAddInput returned false for mic: \(mic.localizedName)")
+                    }
+                } catch {
+                    log.error("AVCaptureDeviceInput(mic) failed: \(error)")
+                }
+            } else {
+                log.error("selectedMicrophone is nil during configureSession")
             }
 
             self.videoDataOutput.videoSettings = [
@@ -203,9 +217,13 @@ final class CaptureManager: NSObject, ObservableObject {
             self.audioDataOutput.setSampleBufferDelegate(self, queue: self.outputQueue)
             if self.captureSession.canAddOutput(self.audioDataOutput) {
                 self.captureSession.addOutput(self.audioDataOutput)
+                log.info("Audio data output added to session")
+            } else {
+                log.error("canAddOutput returned false for audioDataOutput")
             }
 
             self.captureSession.commitConfiguration()
+            log.info("Session configured — inputs: \(self.captureSession.inputs.count), outputs: \(self.captureSession.outputs.count)")
             self.captureSession.startRunning()
 
             DispatchQueue.main.async {
@@ -237,10 +255,19 @@ final class CaptureManager: NSObject, ObservableObject {
             guard let self else { return }
             self.captureSession.beginConfiguration()
             if let old = self.currentAudioInput { self.captureSession.removeInput(old) }
-            if let input = try? AVCaptureDeviceInput(device: device),
-               self.captureSession.canAddInput(input) {
-                self.captureSession.addInput(input)
-                self.currentAudioInput = input
+            do {
+                let input = try AVCaptureDeviceInput(device: device)
+                if self.captureSession.canAddInput(input) {
+                    self.captureSession.addInput(input)
+                    self.currentAudioInput = input
+                    log.info("Mic switched to: \(device.localizedName)")
+                } else {
+                    self.currentAudioInput = nil
+                    log.error("canAddInput false when switching mic to: \(device.localizedName)")
+                }
+            } catch {
+                self.currentAudioInput = nil
+                log.error("AVCaptureDeviceInput failed switching to \(device.localizedName): \(error)")
             }
             self.captureSession.commitConfiguration()
         }
@@ -546,6 +573,14 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         guard sampleCount > 0 else { return }
         let rms = Float(sqrt(sumSq / Double(sampleCount)))
         guard rms.isFinite else { return }
+
+        // Log RMS every ~120 frames (~2 s at 60 fps) so Console shows audio is flowing.
+        rmsLogCounter += 1
+        if rmsLogCounter >= 120 {
+            rmsLogCounter = 0
+            log.debug("Audio RMS: \(rms, format: .fixed(precision: 5)) threshold: \(self.speechThreshold)")
+        }
+
         DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
     }
 
@@ -555,7 +590,10 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         if rms > speechThreshold {
             speakingHoldTimer?.invalidate()
             speakingHoldTimer = nil
-            if !isSpeaking { isSpeaking = true }
+            if !isSpeaking {
+                isSpeaking = true
+                log.info("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+            }
         } else if isSpeaking, speakingHoldTimer == nil {
             speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
                 self?.isSpeaking = false
