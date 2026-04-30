@@ -50,7 +50,12 @@ struct TeleprompterView: View {
 
     private var autoScrollView: some View {
         GeometryReader { proxy in
-            scriptText
+            Text(settings.teleprompterText.isEmpty ? "Tap Edit to add your script…" : settings.teleprompterText)
+                .font(.system(size: settings.teleprompterFontSize, weight: .medium))
+                .foregroundColor(settings.teleprompterText.isEmpty ? .secondary : .primary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding()
+                .padding(.bottom, 200)
                 .frame(width: proxy.size.width, alignment: .topLeading)
                 .offset(y: -scrollOffset)
         }

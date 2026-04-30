@@ -18,7 +18,7 @@ final class CountdownWindowController {
         )
         win.isOpaque = false
         win.backgroundColor = .clear
-        win.level = .screenSaver
+        win.level = .statusBar
         win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         win.ignoresMouseEvents = true
 

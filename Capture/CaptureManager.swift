@@ -442,6 +442,12 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
 
+        // Voice detection runs whenever audio is flowing — independent of
+        // recording state so the voice gate works even if the writer fails.
+        if output === audioDataOutput {
+            measureAudioLevel(sampleBuffer)
+        }
+
         guard isRecordingInternal,
               let writer = assetWriter,
               writer.status == .writing else { return }
@@ -470,7 +476,6 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             }
 
         } else if output === audioDataOutput {
-            measureAudioLevel(sampleBuffer)
             guard let aInput = audioWriterInput,
                   aInput.isReadyForMoreMediaData else { return }
             aInput.append(sampleBuffer)
@@ -479,7 +484,10 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
 
     // Called on outputQueue — dispatches result to main thread.
     private func measureAudioLevel(_ sampleBuffer: CMSampleBuffer) {
-        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+        guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer),
+              let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc)?.pointee,
+              let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+
         var totalLength = 0
         var dataPointer: UnsafeMutablePointer<Int8>?
         CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0,
@@ -487,15 +495,38 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
                                     totalLengthOut: &totalLength,
                                     dataPointerOut: &dataPointer)
         guard let ptr = dataPointer, totalLength > 0 else { return }
-        // macOS AVCapture delivers Float32 PCM from the microphone.
-        let count = totalLength / MemoryLayout<Float32>.stride
-        guard count > 0 else { return }
-        let samples = UnsafeBufferPointer(
-            start: UnsafeRawPointer(ptr).assumingMemoryBound(to: Float32.self),
-            count: count)
-        var sumSq: Float = 0
-        for s in samples { sumSq += s * s }
-        let rms = sqrt(sumSq / Float(count))
+
+        let raw = UnsafeRawPointer(ptr)
+        var sumSq: Double = 0
+        var sampleCount = 0
+
+        if asbd.mFormatFlags & kAudioFormatFlagIsFloat != 0, asbd.mBitsPerChannel == 32 {
+            let count = totalLength / 4
+            let samples = UnsafeBufferPointer(start: raw.assumingMemoryBound(to: Float32.self), count: count)
+            for s in samples { sumSq += Double(s) * Double(s) }
+            sampleCount = count
+        } else if asbd.mFormatFlags & kAudioFormatFlagIsFloat != 0, asbd.mBitsPerChannel == 64 {
+            let count = totalLength / 8
+            let samples = UnsafeBufferPointer(start: raw.assumingMemoryBound(to: Float64.self), count: count)
+            for s in samples { sumSq += s * s }
+            sampleCount = count
+        } else if asbd.mBitsPerChannel == 16 {
+            let count = totalLength / 2
+            let samples = UnsafeBufferPointer(start: raw.assumingMemoryBound(to: Int16.self), count: count)
+            let scale = 1.0 / Double(Int16.max)
+            for s in samples { let f = Double(s) * scale; sumSq += f * f }
+            sampleCount = count
+        } else if asbd.mBitsPerChannel == 32 {
+            let count = totalLength / 4
+            let samples = UnsafeBufferPointer(start: raw.assumingMemoryBound(to: Int32.self), count: count)
+            let scale = 1.0 / Double(Int32.max)
+            for s in samples { let f = Double(s) * scale; sumSq += f * f }
+            sampleCount = count
+        }
+
+        guard sampleCount > 0 else { return }
+        let rms = Float(sqrt(sumSq / Double(sampleCount)))
+        guard rms.isFinite else { return }
         DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
     }
 
@@ -507,7 +538,7 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             speakingHoldTimer = nil
             if !isSpeaking { isSpeaking = true }
         } else if isSpeaking, speakingHoldTimer == nil {
-            speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+            speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
                 self?.isSpeaking = false
                 self?.speakingHoldTimer = nil
             }
