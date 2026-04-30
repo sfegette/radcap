@@ -92,13 +92,17 @@ final class CaptureManager: NSObject, ObservableObject {
     // MARK: - Permissions
 
     private func requestPermissionsAndConfigure() {
+        let audioStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        let videoStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        log.info("Startup auth — audio: \(audioStatus.rawValue), video: \(videoStatus.rawValue)")
+
         let group = DispatchGroup()
 
-        if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined {
+        if videoStatus == .notDetermined {
             group.enter()
             AVCaptureDevice.requestAccess(for: .video) { _ in group.leave() }
         }
-        if AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined {
+        if audioStatus == .notDetermined {
             group.enter()
             AVCaptureDevice.requestAccess(for: .audio) { _ in group.leave() }
         }
@@ -182,14 +186,67 @@ final class CaptureManager: NSObject, ObservableObject {
     private func handleMicInputError(_ error: Error, deviceName: String) {
         let code = (error as NSError).code
         log.error("AVCaptureDeviceInput(mic) failed for '\(deviceName)': \(error)")
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            if code == -11852 {
-                self.lastError = "Microphone access needs to be reset."
-                self.showMicResetAlert()
-            } else {
-                self.lastError = "Could not open microphone \"\(deviceName)\": \(error.localizedDescription)"
+
+        guard code == -11852 else {
+            DispatchQueue.main.async { [weak self] in
+                self?.lastError = "Could not open microphone \"\(deviceName)\": \(error.localizedDescription)"
             }
+            return
+        }
+
+        // -11852 (AVErrorApplicationIsNotAuthorizedToUseDevice) fires when TCC and the
+        // hardware disagree — common after a signing-identity change or tccutil reset.
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        log.info("Mic -11852: authorizationStatus = \(status.rawValue)")
+
+        switch status {
+        case .notDetermined:
+            // TCC has no entry — request access to get the system prompt.
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                guard let self else { return }
+                if granted {
+                    log.info("Mic access granted after -11852; reconfiguring audio input")
+                    self.reconfigureAudioInput()
+                } else {
+                    log.error("Mic access denied after -11852 prompt")
+                    DispatchQueue.main.async { self.showMicResetAlert() }
+                }
+            }
+        case .authorized:
+            // TCC says authorized but hardware disagrees — genuinely stale TCC grant.
+            // Can't recover automatically; user must clear TCC with sudo tccutil reset.
+            log.error("Mic -11852 with .authorized status — stale TCC grant, showing reset alert")
+            DispatchQueue.main.async { self.showMicResetAlert() }
+        default:
+            // .denied or .restricted — no prompt will fire, nothing to do automatically.
+            log.error("Mic -11852 with status \(status.rawValue) — showing reset alert")
+            DispatchQueue.main.async { self.showMicResetAlert() }
+        }
+    }
+
+    private func reconfigureAudioInput() {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            guard let mic = self.selectedMicrophone else { return }
+            self.captureSession.beginConfiguration()
+            if let old = self.currentAudioInput {
+                self.captureSession.removeInput(old)
+                self.currentAudioInput = nil
+            }
+            do {
+                let input = try AVCaptureDeviceInput(device: mic)
+                if self.captureSession.canAddInput(input) {
+                    self.captureSession.addInput(input)
+                    self.currentAudioInput = input
+                    log.info("Audio input re-added after recovery: \(mic.localizedName)")
+                } else {
+                    log.error("canAddInput false during audio recovery for: \(mic.localizedName)")
+                }
+            } catch {
+                log.error("Audio input recovery failed: \(error)")
+                DispatchQueue.main.async { self.showMicResetAlert() }
+            }
+            self.captureSession.commitConfiguration()
         }
     }
 
@@ -197,23 +254,19 @@ final class CaptureManager: NSObject, ObservableObject {
         let alert = NSAlert()
         alert.messageText = "Microphone Access Needs Reset"
         alert.informativeText = """
-            Radcap's microphone permission has become stale — this can happen after updating or reinstalling the app.
+            Radcap's microphone permission has become stale — this can happen after updating, reinstalling, or running diagnostics on the app.
 
-            To fix it:
-            1. Open System Settings → Privacy & Security → Microphone
-            2. Toggle Radcap off, then back on
-            3. Relaunch Radcap
+            To fix, open Terminal and run this command:
 
-            Or run in Terminal, then relaunch:
-                tccutil reset Microphone com.brilliantmindworks.radcap
+                sudo tccutil reset Microphone com.brilliantmindworks.radcap
+
+            Then restart your Mac and relaunch Radcap. macOS will prompt for microphone access.
             """
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open Mic Settings")
+        alert.addButton(withTitle: "Open Terminal")
         alert.addButton(withTitle: "Dismiss")
         if alert.runModal() == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(
-                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
-            )
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"))
         }
     }
 
