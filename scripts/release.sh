@@ -24,8 +24,12 @@ BUILD_DIR="$ROOT_DIR/build"
 ARCHIVE_PATH="$BUILD_DIR/Radcap.xcarchive"
 NOTARY_PROFILE="radcap-notary"
 
-VERSION=$(defaults read "$ROOT_DIR/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "0.0.0")
-BUILD=$(defaults read "$ROOT_DIR/Info.plist" CFBundleVersion 2>/dev/null || echo "1")
+VERSION=$(xcodebuild -project "$ROOT_DIR/$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
+  | awk '/MARKETING_VERSION/{print $3; exit}')
+BUILD=$(xcodebuild -project "$ROOT_DIR/$PROJECT" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
+  | awk '/CURRENT_PROJECT_VERSION/{print $3; exit}')
+VERSION=${VERSION:-0.0.0}
+BUILD=${BUILD:-1}
 
 DO_NDD=true
 DO_MAS=true
