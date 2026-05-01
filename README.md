@@ -1,4 +1,4 @@
-# Radcap
+<img src="docs/radcap-wordmark.png" alt="radcap" width="312" />
 
 A macOS menubar app for recording webcam video and audio with a built-in voice-activated teleprompter.
 
