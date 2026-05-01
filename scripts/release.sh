@@ -23,7 +23,7 @@ set -euo pipefail
 
 SCHEME="Radcap"
 PROJECT="Radcap.xcodeproj"
-BUNDLE_ID="com.brilliantmindworks.radcap"
+BUNDLE_ID="com.sfegette.radcap"
 SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPTS_DIR")"
 BUILD_DIR="$ROOT_DIR/build"

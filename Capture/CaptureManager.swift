@@ -5,7 +5,7 @@ import CoreVideo
 import AppKit
 import OSLog
 
-private let log = Logger(subsystem: "com.brilliantmindworks.radcap", category: "CaptureManager")
+private let log = Logger(subsystem: "com.sfegette.radcap", category: "CaptureManager")
 
 final class CaptureManager: NSObject, ObservableObject {
 
@@ -28,6 +28,7 @@ final class CaptureManager: NSObject, ObservableObject {
     private var speakingHoldTimer: Timer?
     private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
     private var rmsLogCounter = 0
+    private var micConfigureRetried = false
 
     // MARK: - Capture Session (session-queue only)
 
@@ -213,12 +214,23 @@ final class CaptureManager: NSObject, ObservableObject {
                 }
             }
         case .authorized:
-            // TCC says authorized but hardware disagrees — genuinely stale TCC grant.
-            // Can't recover automatically; user must clear TCC with sudo tccutil reset.
-            log.error("Mic -11852 with .authorized status — stale TCC grant, showing reset alert")
-            DispatchQueue.main.async { self.showMicResetAlert() }
+            // TCC says authorized but device creation failed. On first use of a fresh TCC
+            // grant the hardware isn't always ready immediately — retry once with a fresh
+            // device reference before giving up.
+            if !self.micConfigureRetried {
+                self.micConfigureRetried = true
+                log.info("Mic -11852 with .authorized — retrying in 1 s with fresh device")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.reconfigureAudioInput()
+                }
+            } else {
+                log.error("Mic -11852 with .authorized after retry — showing reset alert")
+                DispatchQueue.main.async { self.showMicResetAlert() }
+            }
+        case .denied:
+            log.error("Mic access denied — user must enable in System Settings")
+            DispatchQueue.main.async { self.showMicDeniedAlert() }
         default:
-            // .denied or .restricted — no prompt will fire, nothing to do automatically.
             log.error("Mic -11852 with status \(status.rawValue) — showing reset alert")
             DispatchQueue.main.async { self.showMicResetAlert() }
         }
@@ -227,7 +239,9 @@ final class CaptureManager: NSObject, ObservableObject {
     private func reconfigureAudioInput() {
         sessionQueue.async { [weak self] in
             guard let self else { return }
-            guard let mic = self.selectedMicrophone else { return }
+            // Use a fresh device reference in case the stored one is stale.
+            guard let mic = AVCaptureDevice.default(for: .audio) ?? self.selectedMicrophone else { return }
+            log.info("reconfigureAudioInput — device: '\(mic.localizedName)' suspended:\(mic.isSuspended)")
             self.captureSession.beginConfiguration()
             if let old = self.currentAudioInput {
                 self.captureSession.removeInput(old)
@@ -238,6 +252,7 @@ final class CaptureManager: NSObject, ObservableObject {
                 if self.captureSession.canAddInput(input) {
                     self.captureSession.addInput(input)
                     self.currentAudioInput = input
+                    self.micConfigureRetried = false
                     log.info("Audio input re-added after recovery: \(mic.localizedName)")
                 } else {
                     log.error("canAddInput false during audio recovery for: \(mic.localizedName)")
@@ -250,6 +265,18 @@ final class CaptureManager: NSObject, ObservableObject {
         }
     }
 
+    private func showMicDeniedAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Microphone Access Denied"
+        alert.informativeText = "Radcap doesn't have permission to use the microphone.\n\nOpen System Settings → Privacy & Security → Microphone and enable Radcap, then relaunch."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Dismiss")
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+        }
+    }
+
     private func showMicResetAlert() {
         let alert = NSAlert()
         alert.messageText = "Microphone Access Needs Reset"
@@ -258,7 +285,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
             To fix, open Terminal and run this command:
 
-                sudo tccutil reset Microphone com.brilliantmindworks.radcap
+                sudo tccutil reset Microphone com.sfegette.radcap
 
             Then restart your Mac and relaunch Radcap. macOS will prompt for microphone access.
             """
@@ -285,7 +312,9 @@ final class CaptureManager: NSObject, ObservableObject {
                 self.currentVideoInput = input
             }
 
-            if let mic = self.selectedMicrophone {
+            let mic = self.selectedMicrophone ?? AVCaptureDevice.default(for: .audio)
+            if let mic {
+                log.info("Mic candidate: '\(mic.localizedName)' id:\(mic.uniqueID) suspended:\(mic.isSuspended) connected:\(mic.isConnected)")
                 do {
                     let input = try AVCaptureDeviceInput(device: mic)
                     if self.captureSession.canAddInput(input) {
@@ -299,7 +328,7 @@ final class CaptureManager: NSObject, ObservableObject {
                     self.handleMicInputError(error, deviceName: mic.localizedName)
                 }
             } else {
-                log.error("selectedMicrophone is nil during configureSession")
+                log.error("No microphone device available during configureSession")
             }
 
             self.videoDataOutput.videoSettings = [

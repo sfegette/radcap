@@ -75,8 +75,8 @@ struct SettingsView: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: "0.1.0")
-                    LabeledContent("Bundle ID", value: "com.brilliantmindworks.radcap")
+                    LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
+                    LabeledContent("Bundle ID", value: "com.sfegette.radcap")
                 }
             }
             .formStyle(.grouped)
