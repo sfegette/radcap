@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — skips release.sh, just tests runner + tracker reporting'
+        type: boolean
+        default: true
+
+# Needed for gh release create inside release.sh
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    # Runs on the MBP M5 self-hosted runner — it already has Xcode, the
+    # Developer ID cert, and the radcap-notary keychain profile. See:
+    # github.com/sfegette/radcap/settings/actions/runners to register it.
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 30
+
+    env:
+      # gh CLI picks this up — no separate auth needed on the runner
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set build metadata
+        id: meta
+        run: |
+          echo "deploy_id=$(uuidgen | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+          echo "started_ts=$(date -u +%s)"                         >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date -u '+%Y-%m-%d %H:%M:%S')"        >> "$GITHUB_OUTPUT"
+          echo "build_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+
+      - name: Report build started
+        env:
+          TRACKER_TOKEN: ${{ secrets.TRACKER_API_TOKEN }}
+          TAG:        ${{ github.ref_name }}
+          SHA:        ${{ github.sha }}
+          DEPLOY_ID:  ${{ steps.meta.outputs.deploy_id }}
+          STARTED_AT: ${{ steps.meta.outputs.started_at }}
+          BUILD_URL:  ${{ steps.meta.outputs.build_url }}
+        run: |
+          PAYLOAD=$(python3 -c "
+          import json, os
+          print(json.dumps({
+              'repo_name':    'radcap',
+              'build_type':   'release',
+              'version_tag':  os.environ['TAG'],
+              'commit_hash':  os.environ['SHA'],
+              'branch':       'main',
+              'deploy_id':    os.environ['DEPLOY_ID'],
+              'started_at':   os.environ['STARTED_AT'],
+              'status':       'started',
+              'triggered_by': 'github-actions',
+              'build_url':    os.environ['BUILD_URL'],
+          }))
+          ")
+          curl -sf -X POST "http://m4mini.tailbaeb43.ts.net:8090/api/builds.php?token=${TRACKER_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD" \
+            || echo "::warning::Tracker notification failed (non-fatal)"
+
+      - name: Install xcpretty
+        run: gem list xcpretty -i &>/dev/null || gem install xcpretty --no-document 2>/dev/null || true
+
+      - name: Build and release
+        run: |
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "Dry run — skipping release.sh"
+          else
+            ./scripts/release.sh --ndd
+          fi
+
+      - name: Report success
+        if: success()
+        env:
+          TRACKER_TOKEN: ${{ secrets.TRACKER_API_TOKEN }}
+          DEPLOY_ID:  ${{ steps.meta.outputs.deploy_id }}
+          STARTED_TS: ${{ steps.meta.outputs.started_ts }}
+          TAG:        ${{ github.ref_name }}
+          REPO:       ${{ github.repository }}
+        run: |
+          FINISHED_TS=$(date -u +%s)
+          export DURATION=$(( FINISHED_TS - STARTED_TS ))
+          export FINISHED_AT=$(date -u -r "$FINISHED_TS" '+%Y-%m-%d %H:%M:%S')
+          export ARTIFACT_URL="https://github.com/${REPO}/releases/tag/${TAG}"
+          PAYLOAD=$(python3 -c "
+          import json, os
+          print(json.dumps({
+              'deploy_id':        os.environ['DEPLOY_ID'],
+              'status':           'success',
+              'finished_at':      os.environ['FINISHED_AT'],
+              'duration_seconds': int(os.environ['DURATION']),
+              'artifact_url':     os.environ['ARTIFACT_URL'],
+          }))
+          ")
+          curl -sf -X POST "http://m4mini.tailbaeb43.ts.net:8090/api/builds.php?token=${TRACKER_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD" \
+            || echo "::warning::Tracker notification failed (non-fatal)"
+
+      - name: Report failure
+        if: failure()
+        env:
+          TRACKER_TOKEN: ${{ secrets.TRACKER_API_TOKEN }}
+          DEPLOY_ID: ${{ steps.meta.outputs.deploy_id }}
+        run: |
+          PAYLOAD=$(python3 -c "
+          import json, os
+          print(json.dumps({
+              'deploy_id': os.environ['DEPLOY_ID'],
+              'status':    'failed',
+          }))
+          ")
+          curl -sf -X POST "http://m4mini.tailbaeb43.ts.net:8090/api/builds.php?token=${TRACKER_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD" \
+            || echo "::warning::Tracker notification failed (non-fatal)"
