@@ -74,8 +74,10 @@ struct TeleprompterView: View {
     // MARK: - Style helpers
 
     private var styledFont: Font {
-        var f = Font.system(size: settings.teleprompterFontSize,
-                            weight: settings.teleprompterBold ? .bold : .medium)
+        var f: Font = settings.teleprompterFontName.isEmpty
+            ? .system(size: settings.teleprompterFontSize, weight: settings.teleprompterBold ? .bold : .medium)
+            : .custom(settings.teleprompterFontName, size: settings.teleprompterFontSize)
+        if settings.teleprompterBold && !settings.teleprompterFontName.isEmpty { f = f.bold() }
         if settings.teleprompterItalic { f = f.italic() }
         return f
     }

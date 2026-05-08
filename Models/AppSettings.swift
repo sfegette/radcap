@@ -14,6 +14,7 @@ final class AppSettings: ObservableObject {
         static let teleprompterBold             = "teleprompterBold"
         static let teleprompterItalic           = "teleprompterItalic"
         static let teleprompterAlignment        = "teleprompterAlignment"  // 0=leading 1=center
+        static let teleprompterFontName         = "teleprompterFontName"   // "" = system font
         static let windowX                      = "windowX"
         static let windowY                      = "windowY"
         static let recordingPreviewOpacity      = "recordingPreviewOpacity"
@@ -22,39 +23,33 @@ final class AppSettings: ObservableObject {
     @Published var outputDirectory: URL? {
         didSet { UserDefaults.standard.set(outputDirectory?.path, forKey: Key.outputDirectoryPath) }
     }
-
     @Published var teleprompterText: String {
         didSet { UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText) }
     }
-
     @Published var teleprompterSpeed: Double {
         didSet { UserDefaults.standard.set(teleprompterSpeed, forKey: Key.teleprompterSpeed) }
     }
-
     @Published var teleprompterFontSize: Double {
         didSet { UserDefaults.standard.set(teleprompterFontSize, forKey: Key.teleprompterFontSize) }
     }
-
     @Published var teleprompterPreScrollDelay: Double {
         didSet { UserDefaults.standard.set(teleprompterPreScrollDelay, forKey: Key.teleprompterPreScrollDelay) }
     }
-
     @Published var teleprompterVisibleLines: Int {
         didSet { UserDefaults.standard.set(teleprompterVisibleLines, forKey: Key.teleprompterVisibleLines) }
     }
-
     @Published var teleprompterBold: Bool {
         didSet { UserDefaults.standard.set(teleprompterBold, forKey: Key.teleprompterBold) }
     }
-
     @Published var teleprompterItalic: Bool {
         didSet { UserDefaults.standard.set(teleprompterItalic, forKey: Key.teleprompterItalic) }
     }
-
     @Published var teleprompterAlignment: Int {
         didSet { UserDefaults.standard.set(teleprompterAlignment, forKey: Key.teleprompterAlignment) }
     }
-
+    @Published var teleprompterFontName: String {
+        didSet { UserDefaults.standard.set(teleprompterFontName, forKey: Key.teleprompterFontName) }
+    }
     @Published var recordingPreviewOpacity: Double {
         didSet { UserDefaults.standard.set(recordingPreviewOpacity, forKey: Key.recordingPreviewOpacity) }
     }
@@ -73,7 +68,10 @@ final class AppSettings: ObservableObject {
         teleprompterVisibleLines = lines >= 2 ? min(lines, 10) : 5
         teleprompterBold = UserDefaults.standard.bool(forKey: Key.teleprompterBold)
         teleprompterItalic = UserDefaults.standard.bool(forKey: Key.teleprompterItalic)
-        teleprompterAlignment = UserDefaults.standard.integer(forKey: Key.teleprompterAlignment)
+        // Default to center (1); use stored value only if key has been explicitly set
+        teleprompterAlignment = UserDefaults.standard.object(forKey: Key.teleprompterAlignment) != nil
+            ? UserDefaults.standard.integer(forKey: Key.teleprompterAlignment) : 1
+        teleprompterFontName = UserDefaults.standard.string(forKey: Key.teleprompterFontName) ?? ""
         let opacity = UserDefaults.standard.double(forKey: Key.recordingPreviewOpacity)
         recordingPreviewOpacity = opacity > 0 ? opacity : 0.6
     }
