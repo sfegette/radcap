@@ -122,9 +122,24 @@ struct TeleprompterPillView: View {
     @EnvironmentObject var settings: AppSettings
     @EnvironmentObject var captureManager: CaptureManager
     @EnvironmentObject var scrollModel: TeleprompterScrollModel
+    @EnvironmentObject var opacityModel: PreviewOpacityModel
 
-    private static let textW: CGFloat = 680
-    private static let textH: CGFloat = 96
+    static let textW: CGFloat = 680
+
+    // Shared height calculation used by both this view and RecordingHUDController
+    // for panel sizing — must stay in sync.
+    static func textHeight(fontSize: Double, visibleLines: Int) -> CGFloat {
+        let lineH = min(CGFloat(fontSize), 26) * 1.45
+        return lineH * CGFloat(visibleLines)
+    }
+
+    static func pillHeight(fontSize: Double, visibleLines: Int) -> CGFloat {
+        textHeight(fontSize: fontSize, visibleLines: visibleLines) + 24
+    }
+
+    private var textH: CGFloat {
+        Self.textHeight(fontSize: settings.teleprompterFontSize, visibleLines: settings.teleprompterVisibleLines)
+    }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -135,14 +150,25 @@ struct TeleprompterPillView: View {
                 isRecording: scrollModel.isScrolling,
                 isSpeaking: captureManager.isSpeaking
             )
-            .frame(width: Self.textW, height: Self.textH)
+            .frame(width: Self.textW, height: textH)
 
             recordingBadge
         }
-        .frame(width: Self.textW, height: Self.textH)
+        .frame(width: Self.textW, height: textH)
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background {
+            ZStack {
+                Capsule().fill(.ultraThinMaterial)
+                CameraPreviewView(
+                    session: captureManager.captureSession,
+                    cropMode: captureManager.cropMode
+                )
+                .aspectRatio(contentMode: .fill)
+                .clipShape(Capsule())
+                .opacity(opacityModel.opacity)
+            }
+        }
         .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
         .opacity(0.9)
     }

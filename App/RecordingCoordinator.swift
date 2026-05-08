@@ -82,7 +82,7 @@ final class RecordingCoordinator: ObservableObject {
     // Relative ±5 % adjustment, clamped to a sensible range.
     private func adjustSpeed(by fraction: Double) {
         let s = AppSettings.shared.teleprompterSpeed
-        let newSpeed = max(0.1, min(5.0, s * (1 + fraction)))
+        let newSpeed = max(0.25, min(2.0, s * (1 + fraction)))
         AppSettings.shared.teleprompterSpeed = newSpeed
         speedOverlay.show(speed: newSpeed)
     }
