@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # Usage:
-#   ./scripts/release.sh --local-test  — Release build, Dev signing, reset TCC; for local verification
-#   ./scripts/release.sh --ndd         — NDD only, creates GitHub Release + uploads DMG
-#   ./scripts/release.sh --mas         — App Store only
+#   ./scripts/release.sh --local-test  — Release build, Dev signing, no notarization; for local verification
+#   ./scripts/release.sh --ndd         — NDD only: notarize, tag + push, create GitHub Release
+#   ./scripts/release.sh --mas         — App Store export only (no tag/push)
 #   ./scripts/release.sh --ndd --no-github  — NDD only, skip GitHub Release
+#   ./scripts/release.sh --ndd --no-tag     — NDD only, skip git tag + push
 #   ./scripts/release.sh               — NDD + App Store exports
 #
 # --purge can be combined with any mode to reset TCC mic/camera permissions and
@@ -40,14 +41,16 @@ BUILD=${BUILD:-1}
 DO_NDD=true
 DO_MAS=true
 DO_GITHUB=true
+DO_TAG=true
 DO_LOCAL_TEST=false
 DO_PURGE=false
 for arg in "$@"; do
   case "$arg" in
     --ndd)        DO_MAS=false ;;
-    --mas)        DO_NDD=false; DO_GITHUB=false ;;
+    --mas)        DO_NDD=false; DO_GITHUB=false; DO_TAG=false ;;
     --no-github)  DO_GITHUB=false ;;
-    --local-test) DO_LOCAL_TEST=true; DO_NDD=false; DO_MAS=false; DO_GITHUB=false ;;
+    --no-tag)     DO_TAG=false ;;
+    --local-test) DO_LOCAL_TEST=true; DO_NDD=false; DO_MAS=false; DO_GITHUB=false; DO_TAG=false ;;
     --purge)      DO_PURGE=true ;;
   esac
 done
@@ -135,6 +138,18 @@ if $DO_NDD; then
   DMG="$BUILD_DIR/Radcap-$VERSION.dmg"
   hdiutil create -volname "Radcap" -srcfolder "$APP" -ov -format UDZO "$DMG"
   echo "✅ NDD DMG ready: $DMG"
+
+  if $DO_TAG; then
+    TAG="v$VERSION"
+    if git rev-parse "$TAG" &>/dev/null; then
+      echo "⚠️  Tag $TAG already exists — skipping tag + push (use --no-tag to suppress this warning)"
+    else
+      echo "▶ Tagging $TAG and pushing..."
+      git tag "$TAG"
+      git push origin HEAD "$TAG"
+      echo "✅ Pushed commit + tag $TAG"
+    fi
+  fi
 
   if $DO_GITHUB; then
     if ! command -v gh &>/dev/null; then
