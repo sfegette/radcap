@@ -6,19 +6,21 @@ struct ContentView: View {
     @EnvironmentObject var settings: AppSettings
     @EnvironmentObject var coordinator: RecordingCoordinator
     @State private var showSettings = false
+    @State private var showFormatting = false
     @State private var teleprompterScrolling = false
+    @State private var isEditing = false
     @State private var isHoveringClose = false
 
-    let onClose: () -> Void
-
     @Environment(\.accessibilityReduceTransparency) var reduceTransparency
+
+    let onClose: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             windowChrome
             previewSection
             Divider()
-            TeleprompterView(isScrolling: $teleprompterScrolling)
+            TeleprompterView(isScrolling: $teleprompterScrolling, isEditing: $isEditing)
                 .frame(maxWidth: .infinity, minHeight: 180)
                 .environmentObject(settings)
             Divider()
@@ -62,7 +64,6 @@ struct ContentView: View {
                 .font(.system(.subheadline, design: .default, weight: .semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            // Balance the close button width
             Circle().fill(.clear).frame(width: 12, height: 12)
         }
         .padding(.horizontal, 14)
@@ -119,15 +120,47 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 recordButton
                 Spacer()
-                Button {
-                    teleprompterScrolling.toggle()
-                } label: {
-                    Image(systemName: teleprompterScrolling ? "pause.circle" : "play.circle")
-                        .font(.title2)
+
+                // Prompter controls — grouped visually
+                HStack(spacing: 2) {
+                    Button {
+                        if isEditing { teleprompterScrolling = false }
+                        withAnimation(.easeInOut(duration: 0.15)) { isEditing.toggle() }
+                    } label: {
+                        Image(systemName: isEditing ? "checkmark.circle" : "square.and.pencil")
+                            .font(.title2)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(isEditing ? "Done editing" : "Edit script")
+                    .accessibilityLabel(isEditing ? "Done editing script" : "Edit script")
+
+                    Button {
+                        showFormatting.toggle()
+                    } label: {
+                        Image(systemName: "textformat")
+                            .font(.title2)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Text formatting")
+                    .accessibilityLabel("Text formatting options")
+                    .popover(isPresented: $showFormatting, arrowEdge: .top) {
+                        TeleprompterFormatPopover()
+                            .environmentObject(settings)
+                    }
+
+                    Button {
+                        teleprompterScrolling.toggle()
+                    } label: {
+                        Image(systemName: teleprompterScrolling ? "pause.circle" : "play.circle")
+                            .font(.title2)
+                    }
+                    .buttonStyle(.borderless)
+                    .help(teleprompterScrolling ? "Pause teleprompter" : "Auto-scroll teleprompter")
+                    .accessibilityLabel(teleprompterScrolling ? "Pause teleprompter" : "Start teleprompter scroll")
                 }
-                .buttonStyle(.borderless)
-                .help(teleprompterScrolling ? "Pause teleprompter" : "Auto-scroll teleprompter")
-                .accessibilityLabel(teleprompterScrolling ? "Pause teleprompter" : "Start teleprompter scroll")
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 8))
 
                 Button {
                     showSettings = true
@@ -242,5 +275,91 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
         .help("Select microphone")
         .accessibilityLabel("Microphone")
+    }
+}
+
+// MARK: - Formatting popover (#13)
+
+struct TeleprompterFormatPopover: View {
+    @EnvironmentObject var settings: AppSettings
+
+    private var previewText: String {
+        let sample = settings.teleprompterText
+            .components(separatedBy: .newlines)
+            .first(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+            ?? "The quick brown fox jumps over the lazy dog."
+        return String(sample.prefix(120))
+    }
+
+    private var styledFont: Font {
+        var f = Font.system(size: min(settings.teleprompterFontSize, 24),
+                            weight: settings.teleprompterBold ? .bold : .medium)
+        if settings.teleprompterItalic { f = f.italic() }
+        return f
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Text Formatting")
+                .font(.headline)
+
+            // Live preview
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.black)
+                Text(previewText)
+                    .font(styledFont)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(settings.teleprompterAlignment == 1 ? .center : .leading)
+                    .frame(maxWidth: .infinity, alignment: settings.teleprompterAlignment == 1 ? .center : .leading)
+                    .padding(10)
+            }
+            .frame(height: 80)
+
+            Divider()
+
+            // Style toggles
+            HStack(spacing: 12) {
+                Toggle(isOn: $settings.teleprompterBold) {
+                    Label("Bold", systemImage: "bold")
+                }
+                .toggleStyle(.button)
+                .help("Bold")
+                .accessibilityLabel("Bold text")
+
+                Toggle(isOn: $settings.teleprompterItalic) {
+                    Label("Italic", systemImage: "italic")
+                }
+                .toggleStyle(.button)
+                .help("Italic")
+                .accessibilityLabel("Italic text")
+
+                Divider().frame(height: 22)
+
+                Picker("", selection: $settings.teleprompterAlignment) {
+                    Image(systemName: "text.alignleft").tag(0)
+                        .accessibilityLabel("Align left")
+                    Image(systemName: "text.aligncenter").tag(1)
+                        .accessibilityLabel("Align center")
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 80)
+                .help("Text alignment")
+                .accessibilityLabel("Text alignment")
+            }
+
+            // Font size
+            LabeledContent("Size") {
+                HStack {
+                    Slider(value: $settings.teleprompterFontSize, in: 16...72, step: 2)
+                    Text("\(Int(settings.teleprompterFontSize))pt")
+                        .frame(width: 44, alignment: .trailing)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .frame(width: 300)
     }
 }

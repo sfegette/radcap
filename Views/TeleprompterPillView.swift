@@ -13,8 +13,11 @@ final class TeleprompterScrollModel: ObservableObject {
 // CADisplayLink drives the scroll offset; layer.masksToBounds clips overflow.
 final class ScrollingTextNSView: NSView {
 
-    var text: String = "" { didSet { needsDisplay = true; cachedTextHeight = nil } }
-    var fontSize: CGFloat = 20    { didSet { cachedTextHeight = nil } }
+    var text: String = ""          { didSet { needsDisplay = true; cachedTextHeight = nil } }
+    var fontSize: CGFloat = 20     { didSet { cachedTextHeight = nil } }
+    var bold: Bool = false         { didSet { needsDisplay = true; cachedTextHeight = nil } }
+    var italic: Bool = false       { didSet { needsDisplay = true; cachedTextHeight = nil } }
+    var alignment: Int = 0         { didSet { needsDisplay = true } }  // 0=leading 1=center
     var pps: CGFloat = 50          // pixels per second
 
     var scrollOffset: CGFloat = 0
@@ -100,9 +103,21 @@ final class ScrollingTextNSView: NSView {
         let displayText = text.isEmpty
             ? "No script — tap Edit in the setup window to add one."
             : text
+        var traits: NSFontDescriptor.SymbolicTraits = []
+        if bold   { traits.insert(.bold) }
+        if italic { traits.insert(.italic) }
+        let descriptor = NSFont.systemFont(ofSize: fontSize, weight: bold ? .bold : .medium)
+            .fontDescriptor.withSymbolicTraits(traits)
+        let font = NSFont(descriptor: descriptor, size: fontSize)
+            ?? NSFont.systemFont(ofSize: fontSize, weight: bold ? .bold : .medium)
+
+        let para = NSMutableParagraphStyle()
+        para.alignment = alignment == 1 ? .center : .left
+
         let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: fontSize, weight: .medium),
+            .font: font,
             .foregroundColor: NSColor.white,
+            .paragraphStyle: para,
         ]
         NSAttributedString(string: displayText, attributes: attrs)
             .draw(in: NSRect(x: 0,
@@ -117,6 +132,9 @@ final class ScrollingTextNSView: NSView {
 private struct ScrollingTextView: NSViewRepresentable {
     let text: String
     let fontSize: CGFloat
+    let bold: Bool
+    let italic: Bool
+    let alignment: Int
     let pps: CGFloat
     let isRecording: Bool   // HUD is visible; resets position when this goes false→true
     let isSpeaking: Bool    // voice activity gate
@@ -128,6 +146,9 @@ private struct ScrollingTextView: NSViewRepresentable {
     func updateNSView(_ nsView: ScrollingTextNSView, context: Context) {
         nsView.text = text
         nsView.fontSize = fontSize
+        nsView.bold = bold
+        nsView.italic = italic
+        nsView.alignment = alignment
         nsView.pps = pps
 
         if !isRecording {
@@ -175,6 +196,9 @@ struct TeleprompterPillView: View {
             ScrollingTextView(
                 text: settings.teleprompterText,
                 fontSize: min(settings.teleprompterFontSize, 26),
+                bold: settings.teleprompterBold,
+                italic: settings.teleprompterItalic,
+                alignment: settings.teleprompterAlignment,
                 pps: CGFloat(settings.teleprompterSpeed) * 14,
                 isRecording: scrollModel.isScrolling,
                 isSpeaking: captureManager.isSpeaking
