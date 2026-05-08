@@ -11,6 +11,9 @@ final class AppSettings: ObservableObject {
         static let teleprompterFontSize         = "teleprompterFontSize"
         static let teleprompterPreScrollDelay   = "teleprompterPreScrollDelay"
         static let teleprompterVisibleLines     = "teleprompterVisibleLines"
+        static let teleprompterBold             = "teleprompterBold"
+        static let teleprompterItalic           = "teleprompterItalic"
+        static let teleprompterAlignment        = "teleprompterAlignment"  // 0=leading 1=center
         static let windowX                      = "windowX"
         static let windowY                      = "windowY"
         static let recordingPreviewOpacity      = "recordingPreviewOpacity"
@@ -40,6 +43,18 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(teleprompterVisibleLines, forKey: Key.teleprompterVisibleLines) }
     }
 
+    @Published var teleprompterBold: Bool {
+        didSet { UserDefaults.standard.set(teleprompterBold, forKey: Key.teleprompterBold) }
+    }
+
+    @Published var teleprompterItalic: Bool {
+        didSet { UserDefaults.standard.set(teleprompterItalic, forKey: Key.teleprompterItalic) }
+    }
+
+    @Published var teleprompterAlignment: Int {
+        didSet { UserDefaults.standard.set(teleprompterAlignment, forKey: Key.teleprompterAlignment) }
+    }
+
     @Published var recordingPreviewOpacity: Double {
         didSet { UserDefaults.standard.set(recordingPreviewOpacity, forKey: Key.recordingPreviewOpacity) }
     }
@@ -56,6 +71,9 @@ final class AppSettings: ObservableObject {
         teleprompterPreScrollDelay = max(0, UserDefaults.standard.double(forKey: Key.teleprompterPreScrollDelay))
         let lines = UserDefaults.standard.integer(forKey: Key.teleprompterVisibleLines)
         teleprompterVisibleLines = lines >= 2 ? min(lines, 10) : 5
+        teleprompterBold = UserDefaults.standard.bool(forKey: Key.teleprompterBold)
+        teleprompterItalic = UserDefaults.standard.bool(forKey: Key.teleprompterItalic)
+        teleprompterAlignment = UserDefaults.standard.integer(forKey: Key.teleprompterAlignment)
         let opacity = UserDefaults.standard.double(forKey: Key.recordingPreviewOpacity)
         recordingPreviewOpacity = opacity > 0 ? opacity : 0.6
     }
