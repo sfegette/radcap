@@ -11,6 +11,8 @@ struct ContentView: View {
 
     let onClose: () -> Void
 
+    @Environment(\.accessibilityReduceTransparency) var reduceTransparency
+
     var body: some View {
         VStack(spacing: 0) {
             windowChrome
@@ -23,7 +25,8 @@ struct ContentView: View {
             controlsSection
         }
         .frame(minWidth: 340, minHeight: 520)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial),
+                    in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -51,6 +54,8 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
             .onHover { isHoveringClose = $0 }
+            .help("Close")
+            .accessibilityLabel("Close Radcap")
 
             Spacer()
             Text("Radcap")
@@ -104,6 +109,7 @@ struct ContentView: View {
         .padding(.vertical, 4)
         .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 5))
         .padding(8)
+        .accessibilityHidden(true)
     }
 
     // MARK: - Controls
@@ -121,6 +127,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderless)
                 .help(teleprompterScrolling ? "Pause teleprompter" : "Auto-scroll teleprompter")
+                .accessibilityLabel(teleprompterScrolling ? "Pause teleprompter" : "Start teleprompter scroll")
 
                 Button {
                     showSettings = true
@@ -130,6 +137,8 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderless)
                 .help("Settings")
+                .accessibilityLabel("Open Settings")
+                .keyboardShortcut(",", modifiers: .command)
             }
 
             VStack(spacing: 8) {
@@ -152,6 +161,7 @@ struct ContentView: View {
                         .gridColumnAlignment(.leading)
                         .frame(maxWidth: .infinity)
                         .help("Recording mode")
+                        .accessibilityLabel("Recording Mode")
 
                         Picker("", selection: $captureManager.cropMode) {
                             ForEach(CaptureManager.CropMode.allCases) { m in
@@ -162,6 +172,7 @@ struct ContentView: View {
                         .gridColumnAlignment(.leading)
                         .frame(maxWidth: .infinity)
                         .help("Crop mode")
+                        .accessibilityLabel("Crop Mode")
                     }
                 }
                 if captureManager.recordingMode == .audioOnly {
@@ -173,11 +184,12 @@ struct ContentView: View {
                     .labelsHidden()
                     .frame(maxWidth: .infinity)
                     .help("Audio format")
+                    .accessibilityLabel("Audio Format")
                 }
             }
         }
         .padding(10)
-        .background(.regularMaterial)
+        .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor)) : AnyShapeStyle(.regularMaterial))
     }
 
     private var recordButton: some View {
@@ -214,6 +226,7 @@ struct ContentView: View {
         .labelsHidden()
         .frame(maxWidth: .infinity)
         .help("Select camera")
+        .accessibilityLabel("Camera")
     }
 
     private var microphonePicker: some View {
@@ -228,5 +241,6 @@ struct ContentView: View {
         .labelsHidden()
         .frame(maxWidth: .infinity)
         .help("Select microphone")
+        .accessibilityLabel("Microphone")
     }
 }
