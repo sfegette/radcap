@@ -122,7 +122,7 @@ struct ContentView: View {
                 Spacer()
 
                 // Prompter controls — grouped visually
-                HStack(spacing: 2) {
+                HStack(spacing: 6) {
                     Button {
                         if isEditing { teleprompterScrolling = false }
                         withAnimation(.easeInOut(duration: 0.15)) { isEditing.toggle() }
@@ -282,6 +282,7 @@ struct ContentView: View {
 
 struct TeleprompterFormatPopover: View {
     @EnvironmentObject var settings: AppSettings
+    @State private var availableFonts: [String] = []
 
     private var previewText: String {
         let sample = settings.teleprompterText
@@ -292,8 +293,11 @@ struct TeleprompterFormatPopover: View {
     }
 
     private var styledFont: Font {
-        var f = Font.system(size: min(settings.teleprompterFontSize, 24),
-                            weight: settings.teleprompterBold ? .bold : .medium)
+        let size = min(settings.teleprompterFontSize, 24)
+        var f: Font = settings.teleprompterFontName.isEmpty
+            ? .system(size: size, weight: settings.teleprompterBold ? .bold : .medium)
+            : .custom(settings.teleprompterFontName, size: size)
+        if settings.teleprompterBold && !settings.teleprompterFontName.isEmpty { f = f.bold() }
         if settings.teleprompterItalic { f = f.italic() }
         return f
     }
@@ -303,22 +307,23 @@ struct TeleprompterFormatPopover: View {
             Text("Text Formatting")
                 .font(.headline)
 
-            // Live preview
+            // Live preview — decorative, hidden from VoiceOver
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(.black)
+                RoundedRectangle(cornerRadius: 10).fill(.black)
                 Text(previewText)
                     .font(styledFont)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(settings.teleprompterAlignment == 1 ? .center : .leading)
-                    .frame(maxWidth: .infinity, alignment: settings.teleprompterAlignment == 1 ? .center : .leading)
+                    .frame(maxWidth: .infinity,
+                           alignment: settings.teleprompterAlignment == 1 ? .center : .leading)
                     .padding(10)
             }
             .frame(height: 80)
+            .accessibilityHidden(true)
 
             Divider()
 
-            // Style toggles
+            // Style toggles + alignment
             HStack(spacing: 12) {
                 Toggle(isOn: $settings.teleprompterBold) {
                     Label("Bold", systemImage: "bold")
@@ -336,22 +341,37 @@ struct TeleprompterFormatPopover: View {
 
                 Divider().frame(height: 22)
 
-                Picker("", selection: $settings.teleprompterAlignment) {
+                Picker("Alignment", selection: $settings.teleprompterAlignment) {
                     Image(systemName: "text.alignleft").tag(0)
-                        .accessibilityLabel("Align left")
                     Image(systemName: "text.aligncenter").tag(1)
-                        .accessibilityLabel("Align center")
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .frame(width: 80)
                 .help("Text alignment")
                 .accessibilityLabel("Text alignment")
+            }
+
+            // Font family
+            LabeledContent("Font") {
+                Picker("Font", selection: $settings.teleprompterFontName) {
+                    Text("System").tag("")
+                    Divider()
+                    ForEach(availableFonts, id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                }
+                .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .help("Font family")
+                .accessibilityLabel("Font family")
             }
 
             // Font size
             LabeledContent("Size") {
                 HStack {
                     Slider(value: $settings.teleprompterFontSize, in: 16...72, step: 2)
+                        .accessibilityLabel("Font size")
                     Text("\(Int(settings.teleprompterFontSize))pt")
                         .frame(width: 44, alignment: .trailing)
                         .monospacedDigit()
@@ -361,5 +381,10 @@ struct TeleprompterFormatPopover: View {
         }
         .padding(16)
         .frame(width: 300)
+        .onAppear {
+            availableFonts = NSFontManager.shared.availableFontFamilies
+                .filter { !$0.hasPrefix(".") }
+                .sorted()
+        }
     }
 }

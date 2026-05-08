@@ -15,9 +15,10 @@ final class ScrollingTextNSView: NSView {
 
     var text: String = ""          { didSet { needsDisplay = true; cachedTextHeight = nil } }
     var fontSize: CGFloat = 20     { didSet { cachedTextHeight = nil } }
+    var fontName: String = ""      { didSet { needsDisplay = true; cachedTextHeight = nil } }
     var bold: Bool = false         { didSet { needsDisplay = true; cachedTextHeight = nil } }
     var italic: Bool = false       { didSet { needsDisplay = true; cachedTextHeight = nil } }
-    var alignment: Int = 0         { didSet { needsDisplay = true } }  // 0=leading 1=center
+    var alignment: Int = 1         { didSet { needsDisplay = true } }  // 0=leading 1=center
     var pps: CGFloat = 50          // pixels per second
 
     var scrollOffset: CGFloat = 0
@@ -106,8 +107,10 @@ final class ScrollingTextNSView: NSView {
         var traits: NSFontDescriptor.SymbolicTraits = []
         if bold   { traits.insert(.bold) }
         if italic { traits.insert(.italic) }
-        let descriptor = NSFont.systemFont(ofSize: fontSize, weight: bold ? .bold : .medium)
-            .fontDescriptor.withSymbolicTraits(traits)
+        let baseDescriptor = fontName.isEmpty
+            ? NSFont.systemFont(ofSize: fontSize, weight: bold ? .bold : .medium).fontDescriptor
+            : NSFontDescriptor(fontAttributes: [.family: fontName])
+        let descriptor = baseDescriptor.withSymbolicTraits(traits)
         let font = NSFont(descriptor: descriptor, size: fontSize)
             ?? NSFont.systemFont(ofSize: fontSize, weight: bold ? .bold : .medium)
 
@@ -132,6 +135,7 @@ final class ScrollingTextNSView: NSView {
 private struct ScrollingTextView: NSViewRepresentable {
     let text: String
     let fontSize: CGFloat
+    let fontName: String
     let bold: Bool
     let italic: Bool
     let alignment: Int
@@ -146,6 +150,7 @@ private struct ScrollingTextView: NSViewRepresentable {
     func updateNSView(_ nsView: ScrollingTextNSView, context: Context) {
         nsView.text = text
         nsView.fontSize = fontSize
+        nsView.fontName = fontName
         nsView.bold = bold
         nsView.italic = italic
         nsView.alignment = alignment
@@ -196,6 +201,7 @@ struct TeleprompterPillView: View {
             ScrollingTextView(
                 text: settings.teleprompterText,
                 fontSize: min(settings.teleprompterFontSize, 26),
+                fontName: settings.teleprompterFontName,
                 bold: settings.teleprompterBold,
                 italic: settings.teleprompterItalic,
                 alignment: settings.teleprompterAlignment,
