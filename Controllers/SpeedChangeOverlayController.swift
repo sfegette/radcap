@@ -12,6 +12,8 @@ private final class SpeedOverlayModel: ObservableObject {
 private struct SpeedChangeOverlayView: View {
     @ObservedObject var model: SpeedOverlayModel
 
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+
     @State private var scale: CGFloat = 1.0
     @State private var opacity: Double = 1.0
 
@@ -34,7 +36,11 @@ private struct SpeedChangeOverlayView: View {
     private func popIn() {
         opacity = 1.0
         scale = 1.3
-        withAnimation(.spring(duration: 0.3, bounce: 0.3)) { scale = 1.0 }
+        if reduceMotion {
+            scale = 1.0
+        } else {
+            withAnimation(.spring(duration: 0.3, bounce: 0.3)) { scale = 1.0 }
+        }
     }
 }
 
@@ -50,7 +56,13 @@ final class SpeedChangeOverlayController {
     // and resets the auto-dismiss timer so each press gets its full display time.
     func show(speed: Double) {
         if window == nil { buildWindow() }
-        model.speedText = String(format: "%.1f×", speed)
+        let text = String(format: "%.1f×", speed)
+        model.speedText = text
+        NSAccessibility.post(
+            element: NSApp as Any,
+            notification: .announcementRequested,
+            userInfo: [.announcement: "Speed \(text)", .priority: NSAccessibilityPriorityLevel.medium.rawValue]
+        )
 
         dismissTask?.cancel()
         let task = DispatchWorkItem { [weak self] in self?.dismiss() }

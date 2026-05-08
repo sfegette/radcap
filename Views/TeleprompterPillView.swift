@@ -22,6 +22,14 @@ final class ScrollingTextNSView: NSView {
 
     override var isFlipped: Bool { true }
 
+    // MARK: - Accessibility
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .staticText }
+    override func accessibilityLabel() -> String? { "Teleprompter script" }
+    override func accessibilityValue() -> Any? {
+        text.isEmpty ? "No script — tap Edit in the setup window to add one." : text
+    }
+
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true

@@ -5,6 +5,8 @@ struct CountdownOverlayView: View {
     let startCount: Int
     let onComplete: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+
     @State private var current: Int
     @State private var scale: CGFloat = 1.0
     @State private var opacity: Double = 1.0
@@ -40,37 +42,70 @@ struct CountdownOverlayView: View {
     }
 
     private func animateIn() {
+        announce("\(current)")
         scale = 1.4
-        withAnimation(.spring(duration: 0.4, bounce: 0.35)) { scale = 1.0 }
+        if reduceMotion {
+            scale = 1.0
+        } else {
+            withAnimation(.spring(duration: 0.4, bounce: 0.35)) { scale = 1.0 }
+        }
         playTick()
     }
 
     private func tick() {
-        // Animate out current number
-        withAnimation(.easeOut(duration: 0.22)) {
+        if reduceMotion {
             opacity = 0
             scale = 0.65
+            advanceTick()
+        } else {
+            withAnimation(.easeOut(duration: 0.22)) {
+                opacity = 0
+                scale = 0.65
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) { advanceTick() }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-            if current > 1 {
-                current -= 1
-                scale = 1.4
-                opacity = 1.0
-                withAnimation(.spring(duration: 0.38, bounce: 0.35)) { scale = 1.0 }
-                playTick()
+    }
+
+    private func advanceTick() {
+        if current > 1 {
+            current -= 1
+            scale = 1.4
+            opacity = 1.0
+            announce("\(current)")
+            if reduceMotion {
+                scale = 1.0
             } else {
-                // Show record dot briefly, then complete
-                isDone = true
-                scale = 1.4
-                opacity = 1.0
                 withAnimation(.spring(duration: 0.38, bounce: 0.35)) { scale = 1.0 }
-                playStart()
+            }
+            playTick()
+        } else {
+            isDone = true
+            scale = 1.4
+            opacity = 1.0
+            announce("Recording")
+            if reduceMotion {
+                scale = 1.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    opacity = 0
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { onComplete() }
+                }
+            } else {
+                withAnimation(.spring(duration: 0.38, bounce: 0.35)) { scale = 1.0 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { onComplete() }
                 }
             }
+            playStart()
         }
+    }
+
+    private func announce(_ message: String) {
+        NSAccessibility.post(
+            element: NSApp as Any,
+            notification: .announcementRequested,
+            userInfo: [.announcement: message, .priority: NSAccessibilityPriorityLevel.high.rawValue]
+        )
     }
 
     private func playTick() {

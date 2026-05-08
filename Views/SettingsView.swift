@@ -51,6 +51,7 @@ struct SettingsView: View {
                             EditableValueLabel(
                                 value: $settings.recordingPreviewOpacity,
                                 range: 0.15...1.0,
+                                label: "Preview Opacity",
                                 display: { "\(Int($0 * 100))%" },
                                 parse: { s in
                                     let n = s.replacingOccurrences(of: "%", with: "").trimmingCharacters(in: .whitespaces)
@@ -68,6 +69,7 @@ struct SettingsView: View {
                             EditableValueLabel(
                                 value: $settings.teleprompterFontSize,
                                 range: 16...72,
+                                label: "Font Size",
                                 display: { "\(Int($0))pt" },
                                 parse: { Double($0.replacingOccurrences(of: "pt", with: "")) }
                             )
@@ -77,9 +79,11 @@ struct SettingsView: View {
                     LabeledContent("Scroll Speed") {
                         HStack {
                             Slider(value: speedSliderBinding, in: 0...1)
+                                .accessibilityValue(String(format: "%.2fx", settings.teleprompterSpeed))
                             EditableValueLabel(
                                 value: $settings.teleprompterSpeed,
                                 range: 0.25...2.0,
+                                label: "Scroll Speed",
                                 display: { String(format: "%.2fx", $0) },
                                 parse: { Double($0.replacingOccurrences(of: "x", with: "")) }
                             )
@@ -92,6 +96,7 @@ struct SettingsView: View {
                             EditableValueLabel(
                                 value: $settings.teleprompterPreScrollDelay,
                                 range: 0...5,
+                                label: "Pre-scroll Pause",
                                 display: { $0 == 0 ? "0s" : String(format: "%.1fs", $0) },
                                 parse: { Double($0.replacingOccurrences(of: "s", with: "")) }
                             )
@@ -104,6 +109,7 @@ struct SettingsView: View {
                             EditableValueLabel(
                                 value: linesSliderBinding,
                                 range: 2...10,
+                                label: "Prompter Lines",
                                 display: { "\(Int($0))" },
                                 parse: { Double($0.trimmingCharacters(in: .whitespaces)) }
                             )
@@ -175,6 +181,7 @@ struct SettingsView: View {
 private struct EditableValueLabel: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
+    var label: String = ""
     let display: (Double) -> String
     let parse: (String) -> Double?
 
@@ -195,6 +202,7 @@ private struct EditableValueLabel: View {
                 if !focused { text = display(value) }
             }
             .onAppear { text = display(value) }
+            .accessibilityLabel(label.isEmpty ? "Value" : label)
     }
 
     private func commit() {

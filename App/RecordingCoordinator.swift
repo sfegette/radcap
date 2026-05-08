@@ -27,6 +27,11 @@ final class RecordingCoordinator: ObservableObject {
             self.captureManager.startRecording()
             self.hudController.show()
             self.registerSpeedHotkeys()
+            NSAccessibility.post(
+                element: NSApp as Any,
+                notification: .announcementRequested,
+                userInfo: [.announcement: "Recording started", .priority: NSAccessibilityPriorityLevel.high.rawValue]
+            )
         }
     }
 
@@ -36,6 +41,11 @@ final class RecordingCoordinator: ObservableObject {
         captureManager.stopRecording()
         hudController.hide()
         floatingWindowController?.show()
+        NSAccessibility.post(
+            element: NSApp as Any,
+            notification: .announcementRequested,
+            userInfo: [.announcement: "Recording stopped", .priority: NSAccessibilityPriorityLevel.high.rawValue]
+        )
     }
 
     // MARK: - Speed hotkeys (↑ / ↓ during recording)
