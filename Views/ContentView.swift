@@ -132,30 +132,38 @@ struct ContentView: View {
                 .help("Settings")
             }
 
-            HStack(spacing: 8) {
-                cameraPicker
-                microphonePicker
-            }
+            VStack(spacing: 8) {
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
+                    GridRow {
+                        cameraPicker
+                            .gridColumnAlignment(.leading)
+                            .frame(maxWidth: .infinity)
+                        microphonePicker
+                            .gridColumnAlignment(.leading)
+                            .frame(maxWidth: .infinity)
+                    }
+                    GridRow {
+                        Picker("", selection: $captureManager.recordingMode) {
+                            ForEach(CaptureManager.RecordingMode.allCases) { m in
+                                Text(m.rawValue).tag(m)
+                            }
+                        }
+                        .labelsHidden()
+                        .gridColumnAlignment(.leading)
+                        .frame(maxWidth: .infinity)
+                        .help("Recording mode")
 
-            HStack(spacing: 8) {
-                Picker("", selection: $captureManager.recordingMode) {
-                    ForEach(CaptureManager.RecordingMode.allCases) { m in
-                        Text(m.rawValue).tag(m)
+                        Picker("", selection: $captureManager.cropMode) {
+                            ForEach(CaptureManager.CropMode.allCases) { m in
+                                Text(m.rawValue).tag(m)
+                            }
+                        }
+                        .labelsHidden()
+                        .gridColumnAlignment(.leading)
+                        .frame(maxWidth: .infinity)
+                        .help("Crop mode")
                     }
                 }
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
-                .help("Recording mode")
-
-                Picker("", selection: $captureManager.cropMode) {
-                    ForEach(CaptureManager.CropMode.allCases) { m in
-                        Text(m.rawValue).tag(m)
-                    }
-                }
-                .labelsHidden()
-                .frame(maxWidth: .infinity)
-                .help("Crop mode")
-
                 if captureManager.recordingMode == .audioOnly {
                     Picker("", selection: $captureManager.audioFormat) {
                         ForEach(CaptureManager.AudioFormat.allCases) { f in

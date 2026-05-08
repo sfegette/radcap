@@ -5,17 +5,20 @@ final class RecordingHUDController {
 
     private let captureManager: CaptureManager
     private var pillPanel: NSPanel?
-    private var previewPanel: NSPanel?
     private var scrollMonitor: Any?
 
     private let scrollModel   = TeleprompterScrollModel()
     private let opacityModel  = PreviewOpacityModel(defaultOpacity: AppSettings.shared.recordingPreviewOpacity)
 
-    // Pill dimensions
-    private let pillW: CGFloat    = 720
-    private let pillH: CGFloat    = 120
-    private let previewH: CGFloat = 210
-    private let gap: CGFloat      = 4
+    private let pillW: CGFloat = 720
+
+    // Recomputed each show() so settings changes (font size, visible lines) take effect.
+    private var currentPillH: CGFloat {
+        TeleprompterPillView.pillHeight(
+            fontSize: AppSettings.shared.teleprompterFontSize,
+            visibleLines: AppSettings.shared.teleprompterVisibleLines
+        )
+    }
 
     init(captureManager: CaptureManager) {
         self.captureManager = captureManager
@@ -28,17 +31,15 @@ final class RecordingHUDController {
         // Reset first so the false→true transition always triggers onChange in the view
         scrollModel.isScrolling = false
 
-        if pillPanel == nil    { pillPanel    = buildPillPanel() }
-        if previewPanel == nil { previewPanel = buildPreviewPanel() }
+        if pillPanel == nil { pillPanel = buildPillPanel() }
 
         pillPanel?.orderFront(nil)
-        previewPanel?.orderFront(nil)
         installScrollMonitor()
 
-        // Delay start until after the panel is visible and SwiftUI has laid out the content;
-        // starting the timer before orderFront causes scrollOffset to accumulate before the
-        // first render, making the text appear mid-scroll or at the tail.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        // 0.05 s lets SwiftUI finish layout before scroll begins; add any user-configured
+        // pre-scroll delay on top of that.
+        let delay = 0.05 + AppSettings.shared.teleprompterPreScrollDelay
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             self.scrollModel.isScrolling = true
         }
     }
@@ -46,36 +47,23 @@ final class RecordingHUDController {
     func hide() {
         scrollModel.isScrolling = false
         pillPanel?.orderOut(nil)
-        previewPanel?.orderOut(nil)
         removeScrollMonitor()
         opacityModel.opacity = AppSettings.shared.recordingPreviewOpacity
+        // Nil the panel so it's rebuilt fresh on next show(), picking up any settings changes.
+        pillPanel = nil
     }
 
-    // MARK: - Panel Builders
+    // MARK: - Panel Builder
 
     private func buildPillPanel() -> NSPanel {
-        let (x, y) = pillOrigin()
+        let pillH = currentPillH
+        let (x, y) = pillOrigin(pillH: pillH)
         let panel = makeHUDPanel(frame: NSRect(x: x, y: y, width: pillW, height: pillH))
         let rootView = TeleprompterPillView()
             .environmentObject(AppSettings.shared)
             .environmentObject(captureManager)
             .environmentObject(scrollModel)
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.sizingOptions = []
-        panel.contentView = hostingView
-        return panel
-    }
-
-    private func buildPreviewPanel() -> NSPanel {
-        let (pillX, pillY) = pillOrigin()
-        let x = pillX
-        let y = pillY - previewH - gap
-        let panel = makeHUDPanel(frame: NSRect(x: x, y: y, width: pillW, height: previewH))
-        let rootView = RecordingPreviewView(
-            session: captureManager.captureSession,
-            cropMode: captureManager.cropMode
-        )
-        .environmentObject(opacityModel)
+            .environmentObject(opacityModel)
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.sizingOptions = []
         panel.contentView = hostingView
@@ -100,7 +88,7 @@ final class RecordingHUDController {
 
     // MARK: - Positioning
 
-    private func pillOrigin() -> (CGFloat, CGFloat) {
+    private func pillOrigin(pillH: CGFloat) -> (CGFloat, CGFloat) {
         guard let screen = NSScreen.main else { return (0, 0) }
         let x = (screen.frame.width - pillW) / 2
         let y = screen.visibleFrame.maxY - pillH - 4

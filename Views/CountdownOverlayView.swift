@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct CountdownOverlayView: View {
     let startCount: Int
@@ -41,6 +42,7 @@ struct CountdownOverlayView: View {
     private func animateIn() {
         scale = 1.4
         withAnimation(.spring(duration: 0.4, bounce: 0.35)) { scale = 1.0 }
+        playTick()
     }
 
     private func tick() {
@@ -55,17 +57,31 @@ struct CountdownOverlayView: View {
                 scale = 1.4
                 opacity = 1.0
                 withAnimation(.spring(duration: 0.38, bounce: 0.35)) { scale = 1.0 }
+                playTick()
             } else {
                 // Show record dot briefly, then complete
                 isDone = true
                 scale = 1.4
                 opacity = 1.0
                 withAnimation(.spring(duration: 0.38, bounce: 0.35)) { scale = 1.0 }
+                playStart()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     withAnimation(.easeOut(duration: 0.2)) { opacity = 0 }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { onComplete() }
                 }
             }
         }
+    }
+
+    private func playTick() {
+        let s = NSSound(named: "Tink")
+        s?.volume = 0.35
+        s?.play()
+    }
+
+    private func playStart() {
+        let s = NSSound(named: "Pop")
+        s?.volume = 0.35
+        s?.play()
     }
 }

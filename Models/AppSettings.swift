@@ -5,13 +5,15 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private enum Key {
-        static let outputDirectoryPath      = "outputDirectoryPath"
-        static let teleprompterText         = "teleprompterText"
-        static let teleprompterSpeed        = "teleprompterSpeed"
-        static let teleprompterFontSize     = "teleprompterFontSize"
-        static let windowX                  = "windowX"
-        static let windowY                  = "windowY"
-        static let recordingPreviewOpacity  = "recordingPreviewOpacity"
+        static let outputDirectoryPath          = "outputDirectoryPath"
+        static let teleprompterText             = "teleprompterText"
+        static let teleprompterSpeed            = "teleprompterSpeed"
+        static let teleprompterFontSize         = "teleprompterFontSize"
+        static let teleprompterPreScrollDelay   = "teleprompterPreScrollDelay"
+        static let teleprompterVisibleLines     = "teleprompterVisibleLines"
+        static let windowX                      = "windowX"
+        static let windowY                      = "windowY"
+        static let recordingPreviewOpacity      = "recordingPreviewOpacity"
     }
 
     @Published var outputDirectory: URL? {
@@ -30,6 +32,14 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(teleprompterFontSize, forKey: Key.teleprompterFontSize) }
     }
 
+    @Published var teleprompterPreScrollDelay: Double {
+        didSet { UserDefaults.standard.set(teleprompterPreScrollDelay, forKey: Key.teleprompterPreScrollDelay) }
+    }
+
+    @Published var teleprompterVisibleLines: Int {
+        didSet { UserDefaults.standard.set(teleprompterVisibleLines, forKey: Key.teleprompterVisibleLines) }
+    }
+
     @Published var recordingPreviewOpacity: Double {
         didSet { UserDefaults.standard.set(recordingPreviewOpacity, forKey: Key.recordingPreviewOpacity) }
     }
@@ -40,9 +50,12 @@ final class AppSettings: ObservableObject {
         }
         teleprompterText = UserDefaults.standard.string(forKey: Key.teleprompterText) ?? ""
         let speed = UserDefaults.standard.double(forKey: Key.teleprompterSpeed)
-        teleprompterSpeed = speed > 0 ? speed : 1.5
+        teleprompterSpeed = speed > 0 ? min(max(speed, 0.25), 2.0) : 0.7
         let size = UserDefaults.standard.double(forKey: Key.teleprompterFontSize)
         teleprompterFontSize = size > 0 ? size : 32
+        teleprompterPreScrollDelay = max(0, UserDefaults.standard.double(forKey: Key.teleprompterPreScrollDelay))
+        let lines = UserDefaults.standard.integer(forKey: Key.teleprompterVisibleLines)
+        teleprompterVisibleLines = lines >= 2 ? min(lines, 10) : 5
         let opacity = UserDefaults.standard.double(forKey: Key.recordingPreviewOpacity)
         recordingPreviewOpacity = opacity > 0 ? opacity : 0.6
     }
