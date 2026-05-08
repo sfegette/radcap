@@ -13,12 +13,14 @@ final class TeleprompterScrollModel: ObservableObject {
 // CADisplayLink drives the scroll offset; layer.masksToBounds clips overflow.
 final class ScrollingTextNSView: NSView {
 
-    var text: String = "" { didSet { needsDisplay = true } }
-    var fontSize: CGFloat = 20
+    var text: String = "" { didSet { needsDisplay = true; cachedTextHeight = nil } }
+    var fontSize: CGFloat = 20    { didSet { cachedTextHeight = nil } }
     var pps: CGFloat = 50          // pixels per second
 
     var scrollOffset: CGFloat = 0
     var scrollTimer: Timer?
+
+    private var cachedTextHeight: CGFloat?
 
     override var isFlipped: Bool { true }
 
@@ -50,11 +52,30 @@ final class ScrollingTextNSView: NSView {
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.scrollOffset += self.pps / 60.0
+            // Stop when all text has scrolled fully past the visible area.
+            if self.scrollOffset >= self.totalTextHeight() + self.bounds.height {
+                self.stopScrolling()
+                return
+            }
             self.needsDisplay = true
         }
         RunLoop.main.add(timer, forMode: .common)
         scrollTimer = timer
         needsDisplay = true
+    }
+
+    private func totalTextHeight() -> CGFloat {
+        if let cached = cachedTextHeight { return cached }
+        let displayText = text.isEmpty ? "No script — tap Edit in the setup window to add one." : text
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .medium)
+        ]
+        let h = NSAttributedString(string: displayText, attributes: attrs)
+            .boundingRect(with: NSSize(width: bounds.width, height: .greatestFiniteMagnitude),
+                          options: [.usesLineFragmentOrigin, .usesFontLeading])
+            .height
+        cachedTextHeight = h
+        return h
     }
 
     // Pause: timer stops but scroll position is preserved.

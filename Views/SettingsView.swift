@@ -118,11 +118,13 @@ struct SettingsView: View {
                 }
 
                 Section("About") {
-                    LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")
-                    LabeledContent("Bundle ID", value: "com.sfegette.radcap")
-                    HStack {
-                        Text("Radcap ") + Text(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—")
+                    LabeledContent("Version") {
+                        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+                        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
+                        Text("\(v) (\(b))")
+                            .monospacedDigit()
                     }
+                    LabeledContent("Bundle ID", value: "com.sfegette.radcap")
                     Link("Visit the Radcap Website", destination: URL(string: "https://brilliantmindworks.com/#/apps/radcap/")!)
                         .foregroundStyle(.blue)
                 }
