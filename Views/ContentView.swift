@@ -81,21 +81,13 @@ struct ContentView: View {
                 cropMode: captureManager.cropMode
             )
             .frame(maxWidth: .infinity)
-            .aspectRatio(previewAspectRatio, contentMode: .fill)
+            .aspectRatio(16.0 / 9.0, contentMode: .fill)
             .clipped()
             .background(Color.black)
 
             if captureManager.isRecording {
                 recordingBadge
             }
-        }
-    }
-
-    private var previewAspectRatio: CGFloat {
-        switch captureManager.cropMode {
-        case .none:     return 16.0 / 9.0
-        case .square:   return 1.0
-        case .vertical: return 9.0 / 16.0
         }
     }
 
