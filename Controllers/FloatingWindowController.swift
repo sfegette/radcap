@@ -37,6 +37,10 @@ final class FloatingWindowController {
             .environmentObject(coordinator)
 
         let hosting = NSHostingController(rootView: rootView)
+        hosting.view.wantsLayer = true
+        hosting.view.layer?.cornerRadius = 18
+        hosting.view.layer?.cornerCurve = .continuous
+        hosting.view.layer?.masksToBounds = true
 
         let p = GlassPanel(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 620),

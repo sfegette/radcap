@@ -29,6 +29,7 @@ struct ContentView: View {
         .frame(minWidth: 340, minHeight: 520)
         .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial),
                     in: RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -79,21 +80,14 @@ struct ContentView: View {
                 session: captureManager.captureSession,
                 cropMode: captureManager.cropMode
             )
-            .aspectRatio(previewAspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity)
+            .aspectRatio(16.0 / 9.0, contentMode: .fill)
+            .clipped()
             .background(Color.black)
 
             if captureManager.isRecording {
                 recordingBadge
             }
-        }
-    }
-
-    private var previewAspectRatio: CGFloat {
-        switch captureManager.cropMode {
-        case .none:     return 16.0 / 9.0
-        case .square:   return 1.0
-        case .vertical: return 9.0 / 16.0
         }
     }
 
