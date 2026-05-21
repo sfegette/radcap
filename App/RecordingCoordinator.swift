@@ -6,6 +6,7 @@ final class RecordingCoordinator: ObservableObject {
 
     let captureManager: CaptureManager
     weak var floatingWindowController: FloatingWindowController?
+    @Published private(set) var isCountingDown = false
 
     private lazy var countdownController = CountdownWindowController()
     private lazy var hudController = RecordingHUDController(captureManager: captureManager)
@@ -21,10 +22,16 @@ final class RecordingCoordinator: ObservableObject {
     }
 
     func startFlow() {
+        guard !captureManager.isRecording, !isCountingDown else { return }
+        isCountingDown = true
         floatingWindowController?.hide(stopCamera: false)  // keep session live through countdown
         countdownController.show(from: 3) { [weak self] in
             guard let self else { return }
-            self.captureManager.startRecording()
+            self.isCountingDown = false
+            guard self.captureManager.startRecording() else {
+                self.floatingWindowController?.show()
+                return
+            }
             self.hudController.show()
             self.registerSpeedHotkeys()
             NSAccessibility.post(
@@ -36,6 +43,7 @@ final class RecordingCoordinator: ObservableObject {
     }
 
     func stopFlow() {
+        guard captureManager.isRecording else { return }
         unregisterSpeedHotkeys()
         speedOverlay.dismiss()
         captureManager.stopRecording()
@@ -51,6 +59,7 @@ final class RecordingCoordinator: ObservableObject {
     // MARK: - Speed hotkeys (↑ / ↓ during recording)
 
     private func registerSpeedHotkeys() {
+        guard speedHandlerRef == nil, upHotkeyRef == nil, dnHotkeyRef == nil else { return }
         var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
                                  eventKind: UInt32(kEventHotKeyPressed))
         let selfPtr = Unmanaged.passUnretained(self).toOpaque()

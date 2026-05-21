@@ -5,6 +5,7 @@ final class CountdownWindowController {
     private var window: NSWindow?
 
     func show(from count: Int = 3, completion: @escaping () -> Void) {
+        guard window == nil else { return }
         guard let screen = NSScreen.main else {
             completion()
             return

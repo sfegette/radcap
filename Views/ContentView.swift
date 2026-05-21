@@ -15,6 +15,13 @@ struct ContentView: View {
 
     let onClose: () -> Void
 
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { captureManager.lastError != nil },
+            set: { if !$0 { captureManager.lastError = nil } }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             windowChrome
@@ -34,6 +41,13 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environmentObject(settings)
+        }
+        .alert("Recording Error", isPresented: errorAlertBinding, presenting: captureManager.lastError) { _ in
+            Button("OK") {
+                captureManager.lastError = nil
+            }
+        } message: { message in
+            Text(message)
         }
     }
 
@@ -220,9 +234,9 @@ struct ContentView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: captureManager.isRecording ? "stop.circle.fill" : "record.circle.fill")
+                Image(systemName: captureManager.isRecording ? "stop.circle.fill" : (coordinator.isCountingDown ? "timer" : "record.circle.fill"))
                     .foregroundColor(captureManager.isRecording ? .primary : .red)
-                Text(captureManager.isRecording ? "Stop" : "Record")
+                Text(captureManager.isRecording ? "Stop" : (coordinator.isCountingDown ? "Starting…" : "Record"))
                     .fontWeight(.semibold)
             }
             .frame(minWidth: 90)
@@ -230,7 +244,7 @@ struct ContentView: View {
         .buttonStyle(.bordered)
         .controlSize(.large)
         .keyboardShortcut("r", modifiers: [.command, .option])
-        .disabled(!captureManager.sessionRunning && !captureManager.isRecording)
+        .disabled((!captureManager.sessionRunning && !captureManager.isRecording) || coordinator.isCountingDown)
     }
 
     private var cameraPicker: some View {

@@ -48,6 +48,7 @@ final class CaptureManager: NSObject, ObservableObject {
     private var sessionStarted = false
     private var isRecordingInternal = false
     private var activeCropRect: CGRect = .zero
+    private var writerFailureReported = false
 
     private var durationTimer: Timer?
 
@@ -398,10 +399,18 @@ final class CaptureManager: NSObject, ObservableObject {
 
     // MARK: - Recording
 
-    func toggleRecording() { isRecording ? stopRecording() : startRecording() }
+    func toggleRecording() {
+        if isRecording {
+            stopRecording()
+        } else {
+            _ = startRecording()
+        }
+    }
 
-    func startRecording() {
-        guard !isRecording else { return }
+    @discardableResult
+    func startRecording() -> Bool {
+        guard !isRecording else { return false }
+        lastError = nil
 
         let sourceDims: CMVideoDimensions
         if let camera = selectedCamera {
@@ -417,7 +426,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
         guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: fileType) else {
             DispatchQueue.main.async { self.lastError = "Could not create output file at \(outputURL.path)." }
-            return
+            return false
         }
 
         // Video writer input
@@ -450,6 +459,13 @@ final class CaptureManager: NSObject, ObservableObject {
                     sourcePixelBufferAttributes: pixelAttrs
                 )
             }
+
+            guard vInput != nil else {
+                DispatchQueue.main.async {
+                    self.lastError = "Could not configure video encoding for the recording."
+                }
+                return false
+            }
         }
 
         // Audio writer input
@@ -473,9 +489,24 @@ final class CaptureManager: NSObject, ObservableObject {
         }
         let ai = AVAssetWriterInput(mediaType: .audio, outputSettings: aSettings)
         ai.expectsMediaDataInRealTime = true
-        if writer.canAdd(ai) { writer.add(ai) }
+        guard writer.canAdd(ai) else {
+            DispatchQueue.main.async {
+                self.lastError = "Could not configure audio encoding for the recording."
+            }
+            return false
+        }
+        writer.add(ai)
 
-        writer.startWriting()
+        guard writer.startWriting() else {
+            DispatchQueue.main.async {
+                self.lastError = self.writerErrorMessage(
+                    prefix: "Could not start recording",
+                    writer: writer,
+                    outputURL: outputURL
+                )
+            }
+            return false
+        }
 
         outputQueue.async { [weak self] in
             guard let self else { return }
@@ -486,6 +517,7 @@ final class CaptureManager: NSObject, ObservableObject {
             self.activeCropRect     = cropRect
             self.sessionStarted     = false
             self.isRecordingInternal = true
+            self.writerFailureReported = false
         }
 
         isRecording = true
@@ -494,6 +526,7 @@ final class CaptureManager: NSObject, ObservableObject {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.recordingDuration += 1
         }
+        return true
     }
 
     func stopRecording() {
@@ -512,12 +545,25 @@ final class CaptureManager: NSObject, ObservableObject {
             self.videoWriterInput?.markAsFinished()
             self.audioWriterInput?.markAsFinished()
             let writer = self.assetWriter
+            let outputURL = writer?.outputURL
             self.assetWriter        = nil
             self.videoWriterInput   = nil
             self.audioWriterInput   = nil
             self.pixelBufferAdaptor = nil
             self.sessionStarted     = false
-            writer?.finishWriting {}
+            switch writer?.status {
+            case .some(.writing):
+                writer?.finishWriting { [weak self] in
+                    self?.handleWriterCompletion(writer, outputURL: outputURL)
+                }
+            case .some(.unknown):
+                writer?.cancelWriting()
+                self.handleWriterCompletion(writer, outputURL: outputURL)
+            case .some:
+                self.handleWriterCompletion(writer, outputURL: outputURL)
+            case .none:
+                break
+            }
         }
     }
 
@@ -553,6 +599,60 @@ final class CaptureManager: NSObject, ObservableObject {
         let ext = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.fileExtension : "mov"
         let name = "Radcap_\(fmt.string(from: Date())).\(ext)"
         return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
+    }
+
+    private func handleWriterCompletion(_ writer: AVAssetWriter?, outputURL: URL?) {
+        guard let writer else { return }
+
+        switch writer.status {
+        case .completed:
+            log.info("Recording finalized successfully at \(outputURL?.path ?? writer.outputURL.path)")
+        case .failed:
+            publishWriterFailureIfNeeded(
+                writerErrorMessage(
+                    prefix: "Recording could not be saved",
+                    writer: writer,
+                    outputURL: outputURL
+                )
+            )
+        case .cancelled:
+            publishWriterFailureIfNeeded(
+                writerErrorMessage(
+                    prefix: "Recording was cancelled before it could be saved",
+                    writer: writer,
+                    outputURL: outputURL
+                )
+            )
+        case .unknown:
+            publishWriterFailureIfNeeded(
+                writerErrorMessage(
+                    prefix: "Recording stopped before the file could be finalized",
+                    writer: writer,
+                    outputURL: outputURL
+                )
+            )
+        case .writing:
+            publishWriterFailureIfNeeded("Recording is still writing and did not finish cleanly.")
+        @unknown default:
+            publishWriterFailureIfNeeded("Recording ended in an unknown writer state.")
+        }
+    }
+
+    private func writerErrorMessage(prefix: String, writer: AVAssetWriter, outputURL: URL?) -> String {
+        let fileDescription = outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent
+        if let error = writer.error?.localizedDescription, !error.isEmpty {
+            return "\(prefix) for \(fileDescription): \(error)"
+        }
+        return "\(prefix) for \(fileDescription)."
+    }
+
+    private func publishWriterFailureIfNeeded(_ message: String) {
+        guard !writerFailureReported else { return }
+        writerFailureReported = true
+        log.error("\(message)")
+        DispatchQueue.main.async { [weak self] in
+            self?.lastError = message
+        }
     }
 
     var durationString: String {
@@ -618,8 +718,21 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         }
 
         guard isRecordingInternal,
-              let writer = assetWriter,
-              writer.status == .writing else { return }
+              let writer = assetWriter else { return }
+
+        if writer.status == .failed || writer.status == .cancelled {
+            isRecordingInternal = false
+            publishWriterFailureIfNeeded(
+                writerErrorMessage(
+                    prefix: "Recording failed while writing",
+                    writer: writer,
+                    outputURL: writer.outputURL
+                )
+            )
+            return
+        }
+
+        guard writer.status == .writing else { return }
 
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
 
