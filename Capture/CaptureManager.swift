@@ -280,11 +280,11 @@ final class CaptureManager: NSObject, ObservableObject {
         alert.informativeText = """
             Radcap's microphone permission has become stale — this can happen after updating, reinstalling, or running diagnostics on the app.
 
-            To fix, open Terminal and run this command:
+            To fix, open Terminal and run this command for your current macOS user:
 
-                sudo tccutil reset Microphone com.sfegette.radcap
+                tccutil reset Microphone com.sfegette.radcap
 
-            Then restart your Mac and relaunch Radcap. macOS will prompt for microphone access.
+            No admin privileges are required. After it completes, relaunch Radcap and macOS will prompt for microphone access again.
             """
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Open Terminal")

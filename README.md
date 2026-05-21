@@ -60,6 +60,10 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 Recordings are saved to the Desktop by default (`Radcap_YYYY-MM-DD_HHmmss.mov`). The output directory can be changed in Settings.
 
+## Privacy
+
+Teleprompter text is session-only by default. If you want Radcap to remember your script between launches, enable **Remember script between launches** in Settings. You can also clear the current script from Settings at any time.
+
 ---
 
 ## FAQ

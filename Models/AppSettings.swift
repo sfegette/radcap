@@ -21,6 +21,7 @@ final class AppSettings: ObservableObject {
         static let outputDirectoryPath          = "outputDirectoryPath"
         static let outputDirectoryBookmark      = "outputDirectoryBookmark"
         static let audioFormat                  = "audioFormat"
+        static let persistTeleprompterText      = "persistTeleprompterText"
         static let teleprompterText             = "teleprompterText"
         static let teleprompterSpeed            = "teleprompterSpeed"
         static let teleprompterFontSize         = "teleprompterFontSize"
@@ -54,8 +55,14 @@ final class AppSettings: ObservableObject {
             }
         }
     }
+    @Published var persistTeleprompterText: Bool {
+        didSet {
+            UserDefaults.standard.set(persistTeleprompterText, forKey: Key.persistTeleprompterText)
+            persistTeleprompterTextIfNeeded()
+        }
+    }
     @Published var teleprompterText: String {
-        didSet { UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText) }
+        didSet { persistTeleprompterTextIfNeeded() }
     }
     @Published var teleprompterSpeed: Double {
         didSet { UserDefaults.standard.set(teleprompterSpeed, forKey: Key.teleprompterSpeed) }
@@ -106,7 +113,17 @@ final class AppSettings: ObservableObject {
         } else if let path = UserDefaults.standard.string(forKey: Key.outputDirectoryPath) {
             outputDirectory = URL(fileURLWithPath: path)
         }
-        teleprompterText = UserDefaults.standard.string(forKey: Key.teleprompterText) ?? ""
+        let defaults = UserDefaults.standard
+        let legacyTeleprompterText = defaults.string(forKey: Key.teleprompterText)
+        let shouldPersistTeleprompterText: Bool
+        if defaults.object(forKey: Key.persistTeleprompterText) != nil {
+            shouldPersistTeleprompterText = defaults.bool(forKey: Key.persistTeleprompterText)
+        } else {
+            // Preserve existing users' saved scripts after upgrade, but default new users to session-only storage.
+            shouldPersistTeleprompterText = (legacyTeleprompterText?.isEmpty == false)
+        }
+        persistTeleprompterText = shouldPersistTeleprompterText
+        teleprompterText = shouldPersistTeleprompterText ? (legacyTeleprompterText ?? "") : ""
         let speed = UserDefaults.standard.double(forKey: Key.teleprompterSpeed)
         teleprompterSpeed = speed > 0 ? min(max(speed, 0.25), 2.0) : 0.7
         let size = UserDefaults.standard.double(forKey: Key.teleprompterFontSize)
@@ -126,9 +143,22 @@ final class AppSettings: ObservableObject {
         audioFormat = AudioFormat(rawValue: fmtRaw) ?? .m4a
     }
 
+    func clearTeleprompterText() {
+        teleprompterText = ""
+        UserDefaults.standard.removeObject(forKey: Key.teleprompterText)
+    }
+
     var effectiveOutputDirectory: URL {
         if let dir = outputDirectory { return dir }
         let fallbackSearch: FileManager.SearchPathDirectory = AppSettings.isSandboxed ? .moviesDirectory : .desktopDirectory
         return FileManager.default.urls(for: fallbackSearch, in: .userDomainMask)[0]
+    }
+
+    private func persistTeleprompterTextIfNeeded() {
+        if persistTeleprompterText {
+            UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Key.teleprompterText)
+        }
     }
 }

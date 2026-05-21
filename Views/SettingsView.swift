@@ -73,6 +73,8 @@ struct SettingsView: View {
                 }
 
                 Section("Teleprompter") {
+                    Toggle("Remember script between launches", isOn: $settings.persistTeleprompterText)
+
                     LabeledContent("Font Size") {
                         HStack {
                             Slider(value: $settings.teleprompterFontSize, in: 16...72, step: 2)
@@ -124,6 +126,19 @@ struct SettingsView: View {
                                 parse: { Double($0.trimmingCharacters(in: .whitespaces)) }
                             )
                         }
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(settings.persistTeleprompterText
+                             ? "Your script is stored locally on this Mac until you clear it."
+                             : "Your script stays in memory for this launch only and is removed from local settings.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button("Clear Script") {
+                            settings.clearTeleprompterText()
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(settings.teleprompterText.isEmpty)
                     }
                 }
 
@@ -232,4 +247,3 @@ private extension URL {
         (path as NSString).abbreviatingWithTildeInPath
     }
 }
-
