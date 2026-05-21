@@ -25,7 +25,6 @@ final class CaptureManager: NSObject, ObservableObject {
     @Published var isSpeaking = false
     private(set) var windowVisible = false
 
-    private var speakingHoldTimer: Timer?
     private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
     private var rmsLogCounter = 0
     private var micConfigureRetried = false
@@ -49,6 +48,8 @@ final class CaptureManager: NSObject, ObservableObject {
     private var sessionStarted = false
     private var isRecordingInternal = false
     private var activeCropRect: CGRect = .zero
+    private var speakingStateInternal = false
+    private var speakingHoldWorkItem: DispatchWorkItem?
 
     private var durationTimer: Timer?
 
@@ -489,6 +490,7 @@ final class CaptureManager: NSObject, ObservableObject {
             self.activeCropRect     = cropRect
             self.sessionStarted     = false
             self.isRecordingInternal = true
+            self.resetSpeakingState()
         }
 
         isRecording = true
@@ -505,13 +507,12 @@ final class CaptureManager: NSObject, ObservableObject {
         updateSessionState()
         durationTimer?.invalidate()
         durationTimer = nil
-        speakingHoldTimer?.invalidate()
-        speakingHoldTimer = nil
         isSpeaking = false
 
         outputQueue.async { [weak self] in
             guard let self else { return }
             self.isRecordingInternal = false
+            self.resetSpeakingState()
             self.videoWriterInput?.markAsFinished()
             self.audioWriterInput?.markAsFinished()
             let writer = self.assetWriter
@@ -568,7 +569,11 @@ final class CaptureManager: NSObject, ObservableObject {
 
     // MARK: - Pixel Buffer Crop
 
-    private func cropPixelBuffer(_ src: CVPixelBuffer, to rect: CGRect) -> CVPixelBuffer? {
+    private func cropPixelBuffer(
+        _ src: CVPixelBuffer,
+        to rect: CGRect,
+        using pool: CVPixelBufferPool?
+    ) -> CVPixelBuffer? {
         CVPixelBufferLockBaseAddress(src, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(src, .readOnly) }
 
@@ -586,7 +591,19 @@ final class CaptureManager: NSObject, ObservableObject {
         guard cw > 0, ch > 0 else { return nil }
 
         var dst: CVPixelBuffer?
-        guard CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst) == kCVReturnSuccess,
+        let createStatus: CVReturn
+        if let pool {
+            let pooledStatus = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &dst)
+            if pooledStatus == kCVReturnSuccess {
+                createStatus = pooledStatus
+            } else {
+                createStatus = CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst)
+            }
+        } else {
+            createStatus = CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst)
+        }
+
+        guard createStatus == kCVReturnSuccess,
               let dst else { return nil }
 
         CVPixelBufferLockBaseAddress(dst, [])
@@ -602,6 +619,24 @@ final class CaptureManager: NSObject, ObservableObject {
             )
         }
         return dst
+    }
+
+    private func resetSpeakingState() {
+        speakingHoldWorkItem?.cancel()
+        speakingHoldWorkItem = nil
+        speakingStateInternal = false
+    }
+
+    private func publishSpeakingState(_ speaking: Bool, rms: Float? = nil) {
+        DispatchQueue.main.async { [weak self] in
+            self?.isSpeaking = speaking
+        }
+
+        if speaking, let rms {
+            log.info("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+        } else if !speaking {
+            log.info("isSpeaking → false")
+        }
     }
 }
 
@@ -641,7 +676,11 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             } else if let adaptor = pixelBufferAdaptor,
                       adaptor.assetWriterInput.isReadyForMoreMediaData,
                       let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-                      let cropped = cropPixelBuffer(imageBuffer, to: activeCropRect) {
+                      let cropped = cropPixelBuffer(
+                        imageBuffer,
+                        to: activeCropRect,
+                        using: adaptor.pixelBufferPool
+                      ) {
                 adaptor.append(cropped, withPresentationTime: pts)
             } else {
                 vInput.append(sampleBuffer)
@@ -654,7 +693,7 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         }
     }
 
-    // Called on outputQueue — dispatches result to main thread.
+    // Called on outputQueue. Only speaking-state edge transitions hit the main thread.
     private func measureAudioLevel(_ sampleBuffer: CMSampleBuffer) {
         guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer),
               let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc)?.pointee,
@@ -707,24 +746,29 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             log.debug("Audio RMS: \(rms, format: .fixed(precision: 5)) threshold: \(self.speechThreshold)")
         }
 
-        DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
+        updateSpeakingState(rms: rms)
     }
 
-    // Hold "speaking" for 400ms after audio drops below threshold to smooth
+    // Hold "speaking" for 800ms after audio drops below threshold to smooth
     // over natural breath gaps and brief mid-sentence pauses.
     private func updateSpeakingState(rms: Float) {
         if rms > speechThreshold {
-            speakingHoldTimer?.invalidate()
-            speakingHoldTimer = nil
-            if !isSpeaking {
-                isSpeaking = true
-                log.info("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+            speakingHoldWorkItem?.cancel()
+            speakingHoldWorkItem = nil
+            if !speakingStateInternal {
+                speakingStateInternal = true
+                publishSpeakingState(true, rms: rms)
             }
-        } else if isSpeaking, speakingHoldTimer == nil {
-            speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
-                self?.isSpeaking = false
-                self?.speakingHoldTimer = nil
+        } else if speakingStateInternal, speakingHoldWorkItem == nil {
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.speakingHoldWorkItem = nil
+                guard self.speakingStateInternal else { return }
+                self.speakingStateInternal = false
+                self.publishSpeakingState(false)
             }
+            speakingHoldWorkItem = workItem
+            outputQueue.asyncAfter(deadline: .now() + 0.8, execute: workItem)
         }
     }
 
