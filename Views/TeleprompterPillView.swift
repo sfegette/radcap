@@ -20,6 +20,8 @@ final class ScrollingTextNSView: NSView {
     var italic: Bool = false       { didSet { needsDisplay = true; cachedTextHeight = nil } }
     var alignment: Int = 1         { didSet { needsDisplay = true } }  // 0=leading 1=center
     var pps: CGFloat = 50          // pixels per second
+    var reduceMotion = false
+    var lineAdvance: CGFloat = 28
 
     var scrollOffset: CGFloat = 0
     var scrollTimer: Timer?
@@ -53,9 +55,13 @@ final class ScrollingTextNSView: NSView {
     // Resume from current position (used when voice resumes after a pause).
     func resumeScrolling() {
         guard scrollTimer == nil else { return }
-        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        let interval = reduceMotion ? 0.35 : (1.0 / 60.0)
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             guard let self else { return }
-            self.scrollOffset += self.pps / 60.0
+            let delta = self.reduceMotion
+                ? max(self.lineAdvance * 0.85, self.pps * interval)
+                : self.pps * interval
+            self.scrollOffset += delta
             // Stop when all text has scrolled fully past the visible area.
             if self.scrollOffset >= self.totalTextHeight() + self.bounds.height {
                 self.stopScrolling()
@@ -142,6 +148,8 @@ private struct ScrollingTextView: NSViewRepresentable {
     let pps: CGFloat
     let isRecording: Bool   // HUD is visible; resets position when this goes false→true
     let isSpeaking: Bool    // voice activity gate
+    let reduceMotion: Bool
+    let lineAdvance: CGFloat
 
     func makeNSView(context: Context) -> ScrollingTextNSView {
         ScrollingTextNSView()
@@ -155,6 +163,8 @@ private struct ScrollingTextView: NSViewRepresentable {
         nsView.italic = italic
         nsView.alignment = alignment
         nsView.pps = pps
+        nsView.reduceMotion = reduceMotion
+        nsView.lineAdvance = lineAdvance
 
         if !isRecording {
             // Recording ended — reset to top so next session starts fresh.
@@ -178,6 +188,8 @@ struct TeleprompterPillView: View {
     @EnvironmentObject var captureManager: CaptureManager
     @EnvironmentObject var scrollModel: TeleprompterScrollModel
     @EnvironmentObject var opacityModel: PreviewOpacityModel
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let textW: CGFloat = 680
 
@@ -196,6 +208,14 @@ struct TeleprompterPillView: View {
         Self.textHeight(fontSize: settings.teleprompterFontSize, visibleLines: settings.teleprompterVisibleLines)
     }
 
+    private var lineAdvance: CGFloat {
+        min(CGFloat(settings.teleprompterFontSize), 26) * 1.45
+    }
+
+    private var previewOpacity: Double {
+        reduceTransparency ? min(opacityModel.opacity, 0.18) : opacityModel.opacity
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ScrollingTextView(
@@ -207,7 +227,9 @@ struct TeleprompterPillView: View {
                 alignment: settings.teleprompterAlignment,
                 pps: CGFloat(settings.teleprompterSpeed) * 14,
                 isRecording: scrollModel.isScrolling,
-                isSpeaking: captureManager.isSpeaking
+                isSpeaking: captureManager.isSpeaking,
+                reduceMotion: reduceMotion,
+                lineAdvance: lineAdvance
             )
             .frame(width: Self.textW, height: textH)
 
@@ -218,14 +240,18 @@ struct TeleprompterPillView: View {
         .padding(.vertical, 12)
         .background {
             ZStack {
-                Capsule().fill(.ultraThinMaterial)
+                if reduceTransparency {
+                    Capsule().fill(Color.black.opacity(0.92))
+                } else {
+                    Capsule().fill(.ultraThinMaterial)
+                }
                 CameraPreviewView(
                     session: captureManager.captureSession,
                     cropMode: captureManager.cropMode
                 )
                 .aspectRatio(contentMode: .fill)
                 .clipShape(Capsule())
-                .opacity(opacityModel.opacity)
+                .opacity(previewOpacity)
             }
         }
         .overlay(Capsule().strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
@@ -243,5 +269,6 @@ struct TeleprompterPillView: View {
         }
         .padding(.trailing, 6)
         .padding(.top, 6)
+        .accessibilityHidden(true)
     }
 }

@@ -29,6 +29,9 @@ final class StatusBarController {
         button.action = #selector(handleClick(_:))
         button.target = self
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.toolTip = "Open Radcap"
+        button.setAccessibilityLabel("Radcap menu bar item")
+        button.setAccessibilityValue("Idle")
     }
 
     private func observeRecording(_ captureManager: CaptureManager) {
@@ -79,6 +82,7 @@ final class StatusBarController {
     private func updateForRecording(_ isRecording: Bool) {
         blinkTimer?.invalidate()
         blinkTimer = nil
+        updateAccessibility(recording: isRecording)
 
         if isRecording {
             blinkOn = true
@@ -121,5 +125,12 @@ final class StatusBarController {
             configured.isTemplate = true
         }
         button.image = configured
+    }
+
+    private func updateAccessibility(recording: Bool) {
+        guard let button = statusItem.button else { return }
+        button.toolTip = recording ? "Radcap is recording. Click to open controls." : "Open Radcap"
+        button.setAccessibilityLabel(recording ? "Radcap menu bar item, recording" : "Radcap menu bar item")
+        button.setAccessibilityValue(recording ? "Recording" : "Idle")
     }
 }
