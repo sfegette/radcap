@@ -1,6 +1,7 @@
 import AVFoundation
 import Combine
 import CoreMedia
+import CoreImage
 import CoreVideo
 import AppKit
 import OSLog
@@ -28,6 +29,9 @@ final class CaptureManager: NSObject, ObservableObject {
     private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
     private var rmsLogCounter = 0
     private var micConfigureRetried = false
+    private let preferredVideoFPS: Int32 = 30
+    private let preferredVideoAudioSampleRate = 48_000.0
+    private let preferredAudioOnlySampleRate = 44_100.0
 
     // MARK: - Capture Session (session-queue only)
 
@@ -50,6 +54,8 @@ final class CaptureManager: NSObject, ObservableObject {
     private var activeCropRect: CGRect = .zero
     private var speakingStateInternal = false
     private var speakingHoldWorkItem: DispatchWorkItem?
+    private var activeOutputDimensions = CMVideoDimensions(width: 1920, height: 1080)
+    private let ciContext = CIContext()
 
     private var durationTimer: Timer?
 
@@ -304,13 +310,14 @@ final class CaptureManager: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             self.captureSession.beginConfiguration()
-            self.captureSession.sessionPreset = .high
+            self.captureSession.sessionPreset = .hd1920x1080
 
             if let camera = self.selectedCamera,
                let input = try? AVCaptureDeviceInput(device: camera),
                self.captureSession.canAddInput(input) {
                 self.captureSession.addInput(input)
                 self.currentVideoInput = input
+                self.applyPreferredVideoConfiguration(to: camera)
             }
 
             let mic = self.selectedMicrophone ?? AVCaptureDevice.default(for: .audio)
@@ -339,6 +346,7 @@ final class CaptureManager: NSObject, ObservableObject {
             self.videoDataOutput.setSampleBufferDelegate(self, queue: self.outputQueue)
             if self.captureSession.canAddOutput(self.videoDataOutput) {
                 self.captureSession.addOutput(self.videoDataOutput)
+                self.configureVideoConnection()
             }
 
             self.audioDataOutput.setSampleBufferDelegate(self, queue: self.outputQueue)
@@ -371,8 +379,10 @@ final class CaptureManager: NSObject, ObservableObject {
                self.captureSession.canAddInput(input) {
                 self.captureSession.addInput(input)
                 self.currentVideoInput = input
+                self.applyPreferredVideoConfiguration(to: device)
             }
             self.captureSession.commitConfiguration()
+            self.configureVideoConnection()
         }
     }
 
@@ -413,8 +423,9 @@ final class CaptureManager: NSObject, ObservableObject {
         } else {
             sourceDims = CMVideoDimensions(width: 1280, height: 720)
         }
-        let outDims  = croppedDimensions(from: sourceDims, mode: cropMode)
-        let cropRect = makeCropRect(source: sourceDims, output: outDims)
+        let outDims = outputDimensions(for: cropMode)
+        let cropDims = cropDimensions(for: sourceDims, mode: cropMode)
+        let cropRect = makeCropRect(source: sourceDims, output: cropDims)
 
         let outputURL = generateOutputURL()
         let fileType: AVFileType = recordingMode == .audioOnly ? audioFormat.avFileType : .mov
@@ -447,7 +458,9 @@ final class CaptureManager: NSObject, ObservableObject {
                 let pixelAttrs: [String: Any] = [
                     kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
                     kCVPixelBufferWidthKey  as String: Int(outDims.width),
-                    kCVPixelBufferHeightKey as String: Int(outDims.height)
+                    kCVPixelBufferHeightKey as String: Int(outDims.height),
+                    kCVPixelBufferCGImageCompatibilityKey as String: true,
+                    kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
                 ]
                 adaptor = AVAssetWriterInputPixelBufferAdaptor(
                     assetWriterInput: vi,
@@ -461,7 +474,7 @@ final class CaptureManager: NSObject, ObservableObject {
         if audioFormat == .wav {
             aSettings = [
                 AVFormatIDKey:                kAudioFormatLinearPCM,
-                AVSampleRateKey:              44100.0,
+                AVSampleRateKey:              recordingMode == .videoAndAudio ? preferredVideoAudioSampleRate : preferredAudioOnlySampleRate,
                 AVNumberOfChannelsKey:        2,
                 AVLinearPCMBitDepthKey:    32,
                 AVLinearPCMIsFloatKey:     true,
@@ -470,7 +483,7 @@ final class CaptureManager: NSObject, ObservableObject {
         } else {
             aSettings = [
                 AVFormatIDKey:          kAudioFormatMPEG4AAC,
-                AVSampleRateKey:        44100.0,
+                AVSampleRateKey:        recordingMode == .videoAndAudio ? preferredVideoAudioSampleRate : preferredAudioOnlySampleRate,
                 AVNumberOfChannelsKey:  2,
                 AVEncoderBitRateKey:    256_000
             ]
@@ -488,6 +501,7 @@ final class CaptureManager: NSObject, ObservableObject {
             self.audioWriterInput   = ai
             self.pixelBufferAdaptor = adaptor
             self.activeCropRect     = cropRect
+            self.activeOutputDimensions = outDims
             self.sessionStarted     = false
             self.isRecordingInternal = true
             self.resetSpeakingState()
@@ -527,19 +541,42 @@ final class CaptureManager: NSObject, ObservableObject {
 
     // MARK: - Helpers
 
-    private func croppedDimensions(from src: CMVideoDimensions, mode: CropMode) -> CMVideoDimensions {
-        let w = src.width, h = src.height
+    private func outputDimensions(for mode: CropMode) -> CMVideoDimensions {
         switch mode {
-        case .none:     return src
+        case .none:
+            return CMVideoDimensions(width: 1920, height: 1080)
         case .square:
-            let side = min(w, h)
-            return CMVideoDimensions(width: side, height: side)
+            return CMVideoDimensions(width: 1080, height: 1080)
         case .vertical:
-            let tw = Int32(Double(h) * 9.0 / 16.0)
-            if tw <= w { return CMVideoDimensions(width: tw, height: h) }
-            let th = Int32(Double(w) * 16.0 / 9.0)
-            return CMVideoDimensions(width: w, height: min(th, h))
+            return CMVideoDimensions(width: 1080, height: 1920)
         }
+    }
+
+    private func cropDimensions(for source: CMVideoDimensions, mode: CropMode) -> CMVideoDimensions {
+        let targetAspect: Double
+        switch mode {
+        case .none:
+            targetAspect = 16.0 / 9.0
+        case .square:
+            targetAspect = 1.0
+        case .vertical:
+            targetAspect = 9.0 / 16.0
+        }
+
+        let sourceWidth = Double(source.width)
+        let sourceHeight = Double(source.height)
+        guard sourceWidth > 0, sourceHeight > 0 else {
+            return source
+        }
+
+        let sourceAspect = sourceWidth / sourceHeight
+        if sourceAspect > targetAspect {
+            let cropWidth = max(1, Int32(floor(sourceHeight * targetAspect)))
+            return CMVideoDimensions(width: min(cropWidth, source.width), height: source.height)
+        }
+
+        let cropHeight = max(1, Int32(floor(sourceWidth / targetAspect)))
+        return CMVideoDimensions(width: source.width, height: min(cropHeight, source.height))
     }
 
     private func makeCropRect(source src: CMVideoDimensions, output out: CMVideoDimensions) -> CGRect {
@@ -559,6 +596,43 @@ final class CaptureManager: NSObject, ObservableObject {
         return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
     }
 
+    private func applyPreferredVideoConfiguration(to device: AVCaptureDevice) {
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+
+            let targetFrameDuration = CMTime(value: 1, timescale: preferredVideoFPS)
+            let supportsPreferredFPS = device.activeFormat.videoSupportedFrameRateRanges.contains {
+                $0.minFrameRate <= Double(preferredVideoFPS) && Double(preferredVideoFPS) <= $0.maxFrameRate
+            }
+            if supportsPreferredFPS {
+                device.activeVideoMinFrameDuration = targetFrameDuration
+                device.activeVideoMaxFrameDuration = targetFrameDuration
+            }
+
+            if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposureMode = .continuousAutoExposure
+            }
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        } catch {
+            log.error("Could not apply preferred camera configuration: \(error.localizedDescription)")
+        }
+    }
+
+    private func configureVideoConnection() {
+        guard let connection = videoDataOutput.connection(with: .video) else { return }
+
+        if connection.isVideoMirroringSupported {
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = false
+        }
+    }
+
     var durationString: String {
         let t = Int(recordingDuration)
         let h = t / 3600, m = (t % 3600) / 60, s = t % 60
@@ -568,58 +642,6 @@ final class CaptureManager: NSObject, ObservableObject {
     }
 
     // MARK: - Pixel Buffer Crop
-
-    private func cropPixelBuffer(
-        _ src: CVPixelBuffer,
-        to rect: CGRect,
-        using pool: CVPixelBufferPool?
-    ) -> CVPixelBuffer? {
-        CVPixelBufferLockBaseAddress(src, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(src, .readOnly) }
-
-        guard let srcBase = CVPixelBufferGetBaseAddress(src) else { return nil }
-
-        let srcW   = CVPixelBufferGetWidth(src)
-        let srcH   = CVPixelBufferGetHeight(src)
-        let srcBPR = CVPixelBufferGetBytesPerRow(src)
-        let fmt    = CVPixelBufferGetPixelFormatType(src)
-
-        let cx = max(0, Int(rect.origin.x))
-        let cy = max(0, Int(rect.origin.y))
-        let cw = min(Int(rect.width),  srcW - cx)
-        let ch = min(Int(rect.height), srcH - cy)
-        guard cw > 0, ch > 0 else { return nil }
-
-        var dst: CVPixelBuffer?
-        let createStatus: CVReturn
-        if let pool {
-            let pooledStatus = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &dst)
-            if pooledStatus == kCVReturnSuccess {
-                createStatus = pooledStatus
-            } else {
-                createStatus = CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst)
-            }
-        } else {
-            createStatus = CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst)
-        }
-
-        guard createStatus == kCVReturnSuccess,
-              let dst else { return nil }
-
-        CVPixelBufferLockBaseAddress(dst, [])
-        defer { CVPixelBufferUnlockBaseAddress(dst, []) }
-        guard let dstBase = CVPixelBufferGetBaseAddress(dst) else { return nil }
-        let dstBPR = CVPixelBufferGetBytesPerRow(dst)
-
-        for row in 0..<ch {
-            memcpy(
-                dstBase.advanced(by: row * dstBPR),
-                srcBase.advanced(by: (cy + row) * srcBPR + cx * 4),
-                cw * 4
-            )
-        }
-        return dst
-    }
 
     private func resetSpeakingState() {
         speakingHoldWorkItem?.cancel()
@@ -637,6 +659,65 @@ final class CaptureManager: NSObject, ObservableObject {
         } else if !speaking {
             log.info("isSpeaking → false")
         }
+    }
+
+    private func renderVideoFrame(
+        _ src: CVPixelBuffer,
+        cropRect: CGRect,
+        outputDimensions: CMVideoDimensions,
+        using pool: CVPixelBufferPool?
+    ) -> CVPixelBuffer? {
+        let outputWidth = Int(outputDimensions.width)
+        let outputHeight = Int(outputDimensions.height)
+        guard outputWidth > 0, outputHeight > 0 else { return nil }
+
+        var renderedBuffer: CVPixelBuffer?
+        let pixelBufferStatus: CVReturn
+        if let pool {
+            pixelBufferStatus = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &renderedBuffer)
+        } else {
+            let attrs: [String: Any] = [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+                kCVPixelBufferWidthKey as String: outputWidth,
+                kCVPixelBufferHeightKey as String: outputHeight,
+                kCVPixelBufferCGImageCompatibilityKey as String: true,
+                kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
+            ]
+            pixelBufferStatus = CVPixelBufferCreate(
+                kCFAllocatorDefault,
+                outputWidth,
+                outputHeight,
+                kCVPixelFormatType_32BGRA,
+                attrs as CFDictionary,
+                &renderedBuffer
+            )
+        }
+
+        guard pixelBufferStatus == kCVReturnSuccess, let renderedBuffer else { return nil }
+
+        let sourceHeight = CGFloat(CVPixelBufferGetHeight(src))
+        let ciCropRect = CGRect(
+            x: cropRect.origin.x,
+            y: sourceHeight - cropRect.maxY,
+            width: cropRect.width,
+            height: cropRect.height
+        )
+
+        let ciImage = CIImage(cvPixelBuffer: src)
+            .cropped(to: ciCropRect)
+            .transformed(by: CGAffineTransform(
+                scaleX: CGFloat(outputDimensions.width) / ciCropRect.width,
+                y: CGFloat(outputDimensions.height) / ciCropRect.height
+            ))
+
+        let renderBounds = CGRect(x: 0, y: 0, width: outputWidth, height: outputHeight)
+        ciContext.render(
+            ciImage,
+            to: renderedBuffer,
+            bounds: renderBounds,
+            colorSpace: CGColorSpaceCreateDeviceRGB()
+        )
+        return renderedBuffer
     }
 }
 
@@ -669,22 +750,18 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         if output === videoDataOutput {
             guard recordingMode == .videoAndAudio,
                   let vInput = videoWriterInput,
-                  vInput.isReadyForMoreMediaData else { return }
+                  let adaptor = pixelBufferAdaptor,
+                  vInput.isReadyForMoreMediaData,
+                  adaptor.assetWriterInput.isReadyForMoreMediaData,
+                  let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+                  let rendered = renderVideoFrame(
+                    imageBuffer,
+                    cropRect: activeCropRect,
+                    outputDimensions: activeOutputDimensions,
+                    using: adaptor.pixelBufferPool
+                  ) else { return }
 
-            if cropMode == .none {
-                vInput.append(sampleBuffer)
-            } else if let adaptor = pixelBufferAdaptor,
-                      adaptor.assetWriterInput.isReadyForMoreMediaData,
-                      let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-                      let cropped = cropPixelBuffer(
-                        imageBuffer,
-                        to: activeCropRect,
-                        using: adaptor.pixelBufferPool
-                      ) {
-                adaptor.append(cropped, withPresentationTime: pts)
-            } else {
-                vInput.append(sampleBuffer)
-            }
+            adaptor.append(rendered, withPresentationTime: pts)
 
         } else if output === audioDataOutput {
             guard let aInput = audioWriterInput,

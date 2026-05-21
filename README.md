@@ -29,6 +29,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 - **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or the Settings slider
 - **Global hotkey** — ⌘⌥R starts and stops recording from any app
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
+- **Social-ready video presets** — exports fixed 30 fps video targets for landscape, square, and vertical formats
 - **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
 - **Multiple output formats** — `.mov` (video + audio), `.m4a`, or `.wav` (audio only)
 - **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
@@ -55,6 +56,14 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 ## Output
 
 Recordings are saved to the Desktop by default (`Radcap_YYYY-MM-DD_HHmmss.mov`). The output directory can be changed in Settings.
+
+When recording video, Radcap now targets explicit social-friendly exports:
+
+- `Full Frame` → `1920×1080` at `30 fps`
+- `Square` → `1080×1080` at `30 fps`
+- `Vertical` → `1080×1920` at `30 fps`
+
+Saved video is written unmirrored so exported footage matches the scene rather than a mirrored preview.
 
 ---
 
