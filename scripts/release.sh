@@ -21,6 +21,16 @@ set -euo pipefail
 #
 # Generate an app-specific password at: appleid.apple.com → Sign-In and Security
 # GitHub CLI (gh) must be authenticated: gh auth login
+#
+# Build tracker reporting (optional):
+#   release.sh self-reports release start/success/failure to the BMW build
+#   tracker. This replaces the old .github/workflows/release.yml CI path, which
+#   only fired on `git push` of a tag (never on UI/API-created releases) and
+#   re-ran this script on a runner that lacks the notary keychain. release.sh
+#   runs in the authenticated local env where the build actually happens, so it
+#   reports directly. Enable by exporting TRACKER_API_TOKEN; unset = skipped.
+#     export TRACKER_API_TOKEN=...        # required to enable reporting
+#     export TRACKER_API_URL=...          # optional; defaults to the Tailscale URL
 
 SCHEME="Radcap"
 PROJECT="Radcap.xcodeproj"
@@ -54,6 +64,92 @@ for arg in "$@"; do
     --purge)      DO_PURGE=true ;;
   esac
 done
+
+# --- Build tracker reporting (Option A: release.sh self-reports) ------------
+# Upserts a single bmw_builds row keyed by TRACKER_DEPLOY_ID: a 'started' row on
+# release start, then updated to 'success' or 'failed'. All POSTs are non-fatal —
+# a tracker outage never aborts a release.
+TRACKER_API_URL="${TRACKER_API_URL:-http://m4mini.tailbaeb43.ts.net:8090/api/builds.php}"
+TRACKER_DEPLOY_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+TRACKER_STARTED_TS=0
+tracker_started=false
+tracker_final=false
+
+tracker_post() {  # $1 = JSON payload
+  [ -n "${TRACKER_API_TOKEN:-}" ] || return 0
+  curl -sf -X POST "${TRACKER_API_URL}?token=${TRACKER_API_TOKEN}" \
+    -H 'Content-Type: application/json' -d "$1" >/dev/null \
+    || echo "⚠️  tracker report failed (non-fatal)"
+}
+
+tracker_report_started() {
+  if [ -z "${TRACKER_API_TOKEN:-}" ]; then
+    echo "ℹ️  TRACKER_API_TOKEN unset — skipping build-tracker reporting"
+    return 0
+  fi
+  TRACKER_STARTED_TS=$(date -u +%s)
+  local started_at sha branch
+  started_at=$(date -u '+%Y-%m-%d %H:%M:%S')
+  sha=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
+  branch=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
+  tracker_post "$(VERSION="$VERSION" SHA="$sha" BRANCH="$branch" \
+    DEPLOY_ID="$TRACKER_DEPLOY_ID" STARTED_AT="$started_at" python3 -c "
+import json, os
+print(json.dumps({
+    'repo_name':    'radcap',
+    'build_type':   'release',
+    'version_tag':  'v' + os.environ['VERSION'],
+    'commit_hash':  os.environ['SHA'],
+    'branch':       os.environ['BRANCH'],
+    'deploy_id':    os.environ['DEPLOY_ID'],
+    'started_at':   os.environ['STARTED_AT'],
+    'status':       'started',
+    'triggered_by': 'release.sh',
+}))")"
+  tracker_started=true
+  echo "▶ Build tracker: reported start (deploy_id ${TRACKER_DEPLOY_ID})"
+}
+
+tracker_report_success() {
+  $tracker_started || return 0
+  $tracker_final && return 0
+  local finished_at duration
+  finished_at=$(date -u '+%Y-%m-%d %H:%M:%S')
+  duration=$(( $(date -u +%s) - TRACKER_STARTED_TS ))
+  tracker_post "$(VERSION="$VERSION" DEPLOY_ID="$TRACKER_DEPLOY_ID" \
+    FINISHED_AT="$finished_at" DURATION="$duration" python3 -c "
+import json, os
+print(json.dumps({
+    'deploy_id':        os.environ['DEPLOY_ID'],
+    'status':           'success',
+    'finished_at':      os.environ['FINISHED_AT'],
+    'duration_seconds': int(os.environ['DURATION']),
+    'artifact_url':     'https://github.com/sfegette/radcap/releases/tag/v' + os.environ['VERSION'],
+}))")"
+  tracker_final=true
+  echo "✅ Build tracker: reported success"
+}
+
+tracker_report_failed() {
+  $tracker_started || return 0
+  $tracker_final && return 0
+  local finished_at duration
+  finished_at=$(date -u '+%Y-%m-%d %H:%M:%S')
+  duration=$(( $(date -u +%s) - TRACKER_STARTED_TS ))
+  tracker_post "$(DEPLOY_ID="$TRACKER_DEPLOY_ID" FINISHED_AT="$finished_at" \
+    DURATION="$duration" python3 -c "
+import json, os
+print(json.dumps({
+    'deploy_id':        os.environ['DEPLOY_ID'],
+    'status':           'failed',
+    'finished_at':      os.environ['FINISHED_AT'],
+    'duration_seconds': int(os.environ['DURATION']),
+}))")"
+  tracker_final=true
+  echo "✗ Build tracker: reported failure"
+}
+
+trap 'tracker_report_failed' ERR
 
 echo "▶ Radcap $VERSION ($BUILD)"
 mkdir -p "$BUILD_DIR"
@@ -98,6 +194,11 @@ if $DO_LOCAL_TEST; then
   echo "   Launch to verify mic/camera permissions and recording:"
   echo "   open '$APP'"
   exit 0
+fi
+
+# Report release start to the build tracker (NDD path only — the real release).
+if $DO_NDD; then
+  tracker_report_started
 fi
 
 # Archive once, used by both export paths.
@@ -170,6 +271,10 @@ macOS will verify the app on first launch — if prompted, right-click → Open.
       echo "✅ GitHub Release $TAG published"
     fi
   fi
+
+  # NDD release path complete — report success now so the published release is
+  # recorded regardless of any later (App Store) export step.
+  tracker_report_success
 fi
 
 # --- App Store ---
