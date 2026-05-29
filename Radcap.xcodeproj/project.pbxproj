@@ -51,13 +51,6 @@
 		FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		23943A2C2FAE74F50056EBB2 /* public */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = public;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXGroup section */
 		3A96378F5D1660922E15BA6A /* Products */ = {
@@ -124,7 +117,6 @@
 		D5693FCC1EE7AA460C20A923 = {
 			isa = PBXGroup;
 			children = (
-				23943A2C2FAE74F50056EBB2 /* public */,
 				2EA5517E1970AE34A956951A /* Assets.xcassets */,
 				4399AE4BA8360D7C02A1F7B7 /* App */,
 				BECAB3506B146BB0F7478B2E /* Capture */,
@@ -150,7 +142,6 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				23943A2C2FAE74F50056EBB2 /* public */,
 			);
 			name = Radcap;
 			packageProductDependencies = (
