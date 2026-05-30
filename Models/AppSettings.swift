@@ -1,11 +1,21 @@
 import Foundation
+import AVFoundation
 import Combine
 
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    enum AudioFormat: String, CaseIterable, Identifiable {
+        case m4a = "M4A (AAC)"
+        case wav = "WAV (Lossless)"
+        var id: String { rawValue }
+        var fileExtension: String { self == .m4a ? "m4a" : "wav" }
+        var avFileType: AVFileType  { self == .m4a ? .m4a  : .wav  }
+    }
+
     private enum Key {
         static let outputDirectoryPath          = "outputDirectoryPath"
+        static let audioFormat                  = "audioFormat"
         static let teleprompterText             = "teleprompterText"
         static let teleprompterSpeed            = "teleprompterSpeed"
         static let teleprompterFontSize         = "teleprompterFontSize"
@@ -53,6 +63,9 @@ final class AppSettings: ObservableObject {
     @Published var recordingPreviewOpacity: Double {
         didSet { UserDefaults.standard.set(recordingPreviewOpacity, forKey: Key.recordingPreviewOpacity) }
     }
+    @Published var audioFormat: AudioFormat {
+        didSet { UserDefaults.standard.set(audioFormat.rawValue, forKey: Key.audioFormat) }
+    }
 
     private init() {
         if let path = UserDefaults.standard.string(forKey: Key.outputDirectoryPath) {
@@ -74,6 +87,8 @@ final class AppSettings: ObservableObject {
         teleprompterFontName = UserDefaults.standard.string(forKey: Key.teleprompterFontName) ?? ""
         let opacity = UserDefaults.standard.double(forKey: Key.recordingPreviewOpacity)
         recordingPreviewOpacity = opacity > 0 ? opacity : 0.6
+        let fmtRaw = UserDefaults.standard.string(forKey: Key.audioFormat) ?? ""
+        audioFormat = AudioFormat(rawValue: fmtRaw) ?? .m4a
     }
 
     var effectiveOutputDirectory: URL {

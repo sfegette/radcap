@@ -31,7 +31,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 - **Global hotkey** — ⌘⌥R starts and stops recording from any app
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
 - **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
-- **Multiple output formats** — `.mov` (video + audio), `.m4a`, or `.wav` (audio only)
+- **Multiple output formats** — `.mov` (video + audio), `.m4a` (AAC), or `.wav` (lossless) for audio-only recordings; format set in Settings
 - **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
 - **Accessibility** — full VoiceOver support, keyboard navigation, reduce-motion and reduce-transparency fallbacks
 
@@ -40,8 +40,8 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 ## Usage
 
 1. Click the menu bar icon to open the setup window.
-2. Choose your camera, microphone, crop mode, and output format.
-3. Open **Settings** (⚙) to paste your teleprompter script and adjust scroll speed, font size, and preview opacity.
+2. Choose your camera, microphone, recording mode, and crop mode.
+3. Open **Settings** (⚙) to paste your teleprompter script, choose your audio format, and adjust scroll speed, font size, and preview opacity.
 4. Use the **Tᴀ** formatting button to set bold/italic, alignment, and pre-scroll delay.
 5. Click **Record** or press **⌘⌥R**. A 3-second countdown appears, then the setup window hides.
 6. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak.
@@ -79,7 +79,7 @@ The teleprompter is voice-activated — it only scrolls while it detects audio. 
 Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list.
 
 **What's the difference between the output formats?**
-`.mov` captures video and audio together. `.m4a` and `.wav` capture audio only — useful if you just need a voiceover track. `.wav` is uncompressed; `.m4a` is smaller.
+`.mov` captures video and audio together. `.m4a` (AAC) and `.wav` (lossless) capture audio only — useful if you just need a voiceover track. Set your preferred audio format in **Settings → Audio Format**.
 
 **Is Radcap on the Mac App Store?**
 Not yet. Download from the [Releases](https://github.com/sfegette/radcap/releases) page.

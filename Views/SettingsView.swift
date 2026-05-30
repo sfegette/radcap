@@ -42,6 +42,16 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                         .font(.caption)
                     }
+                    LabeledContent("Audio Format") {
+                        Picker("", selection: $settings.audioFormat) {
+                            ForEach(AppSettings.AudioFormat.allCases) { f in
+                                Text(f.rawValue).tag(f)
+                            }
+                        }
+                        .labelsHidden()
+                        .help("Audio format used when recording in Audio Only mode")
+                        .accessibilityLabel("Audio Format")
+                    }
                 }
 
                 Section("Recording") {

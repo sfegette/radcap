@@ -19,7 +19,6 @@ final class CaptureManager: NSObject, ObservableObject {
     @Published var recordingDuration: TimeInterval = 0
     @Published var cropMode: CropMode = .none
     @Published var recordingMode: RecordingMode = .videoAndAudio
-    @Published var audioFormat: AudioFormat = .m4a
     @Published var sessionRunning = false
     @Published var lastError: String?
     @Published var isSpeaking = false
@@ -65,14 +64,6 @@ final class CaptureManager: NSObject, ObservableObject {
         case videoAndAudio = "Video + Audio"
         case audioOnly     = "Audio Only"
         var id: String { rawValue }
-    }
-
-    enum AudioFormat: String, CaseIterable, Identifiable {
-        case m4a = "M4A (AAC)"
-        case wav = "WAV (Lossless)"
-        var id: String { rawValue }
-        var fileExtension: String { self == .m4a ? "m4a" : "wav" }
-        var avFileType: AVFileType  { self == .m4a ? .m4a  : .wav  }
     }
 
     // MARK: - Init
@@ -416,7 +407,7 @@ final class CaptureManager: NSObject, ObservableObject {
         let cropRect = makeCropRect(source: sourceDims, output: outDims)
 
         let outputURL = generateOutputURL()
-        let fileType: AVFileType = recordingMode == .audioOnly ? audioFormat.avFileType : .mov
+        let fileType: AVFileType = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.avFileType : .mov
 
         guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: fileType) else {
             DispatchQueue.main.async { self.lastError = "Could not create output file at \(outputURL.path)." }
@@ -457,7 +448,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
         // Audio writer input
         let aSettings: [String: Any]
-        if audioFormat == .wav {
+        if AppSettings.shared.audioFormat == .wav {
             aSettings = [
                 AVFormatIDKey:                kAudioFormatLinearPCM,
                 AVSampleRateKey:              44100.0,
@@ -553,7 +544,7 @@ final class CaptureManager: NSObject, ObservableObject {
     private func generateOutputURL() -> URL {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
-        let ext = recordingMode == .audioOnly ? audioFormat.fileExtension : "mov"
+        let ext = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.fileExtension : "mov"
         let name = "Radcap_\(fmt.string(from: Date())).\(ext)"
         return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
     }

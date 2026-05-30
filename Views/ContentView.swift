@@ -202,17 +202,6 @@ struct ContentView: View {
                         .accessibilityLabel("Crop Mode")
                     }
                 }
-                if captureManager.recordingMode == .audioOnly {
-                    Picker("", selection: $captureManager.audioFormat) {
-                        ForEach(CaptureManager.AudioFormat.allCases) { f in
-                            Text(f.rawValue).tag(f)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                    .help("Audio format")
-                    .accessibilityLabel("Audio Format")
-                }
             }
         }
         .padding(10)
