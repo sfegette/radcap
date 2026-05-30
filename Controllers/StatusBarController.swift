@@ -11,7 +11,7 @@ final class StatusBarController {
     weak var coordinator: RecordingCoordinator?
 
     init(captureManager: CaptureManager) {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         setupButton()
         setIcon(recording: false, blink: true)
         observeRecording(captureManager)
@@ -96,30 +96,12 @@ final class StatusBarController {
     private func setIcon(recording: Bool, blink: Bool) {
         guard let button = statusItem.button else { return }
 
-        let symbolName: String
-        if recording {
-            symbolName = blink ? "record.circle.fill" : "record.circle"
-        } else {
-            symbolName = "video.circle"
-        }
+        guard let image = NSImage(named: "MenubarIcon") else { return }
+        image.isTemplate = true
+        image.size = NSSize(width: 18, height: 18)
+        button.image = image
 
-        guard let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) else { return }
-
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let finalConfig: NSImage.SymbolConfiguration
-
-        if recording && blink {
-            // Red dot while recording (blink on)
-            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [.systemRed])
-            finalConfig = sizeConfig.applying(colorConfig)
-        } else {
-            finalConfig = sizeConfig
-        }
-
-        let configured = image.withSymbolConfiguration(finalConfig) ?? image
-        if !(recording && blink) {
-            configured.isTemplate = true
-        }
-        button.image = configured
+        // Tint red while recording; blink by toggling between red and system tint.
+        button.contentTintColor = (recording && blink) ? .systemRed : nil
     }
 }
