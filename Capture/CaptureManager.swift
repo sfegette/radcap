@@ -709,7 +709,7 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             speakingHoldTimer = nil
             if !isSpeaking {
                 isSpeaking = true
-                log.info("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+                log.debug("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
             }
         } else if isSpeaking, speakingHoldTimer == nil {
             speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
