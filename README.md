@@ -22,16 +22,18 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 ## Features
 
-- **Menubar recorder** — lives quietly in the menu bar until you need it
+- **Menubar recorder** — lives quietly in the menu bar until you need it; no dock icon
 - **Liquid Glass setup window** — borderless macOS 26 glass panel for camera and script setup
-- **3-2-1 countdown** — full-screen overlay before recording starts so you can compose yourself
-- **Voice-activated teleprompter** — script scrolls while it detects your voice, pauses when you're silent, resumes when you speak
-- **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or the Settings slider
+- **3-2-1 countdown** — full-screen overlay with audio ticks before recording starts so you can compose yourself
+- **Voice-activated teleprompter** — script scrolls while it detects your voice, pauses when you go silent, resumes when you speak; halts automatically when the script ends
+- **Teleprompter formatting** — bold/italic toggles, left/center alignment, font size slider, and a pre-scroll delay — all adjustable in the formatting popover; live preview reflects the recording HUD exactly
+- **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or Settings
 - **Global hotkey** — ⌘⌥R starts and stops recording from any app
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
 - **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
 - **Multiple output formats** — `.mov` (video + audio), `.m4a`, or `.wav` (audio only)
 - **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
+- **Accessibility** — full VoiceOver support, keyboard navigation, reduce-motion and reduce-transparency fallbacks
 
 ---
 
@@ -39,10 +41,11 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 1. Click the menu bar icon to open the setup window.
 2. Choose your camera, microphone, crop mode, and output format.
-3. Open **Settings** (⚙) to paste your teleprompter script and adjust font size, scroll speed, and preview opacity.
-4. Click **Record** or press **⌘⌥R**. A 3-second countdown appears, then the setup window hides.
-5. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak.
-6. Press **⌘⌥R** again, or choose **■ Stop Recording** from the menu bar icon, to stop. The recording saves automatically.
+3. Open **Settings** (⚙) to paste your teleprompter script and adjust scroll speed, font size, and preview opacity.
+4. Use the **Tᴀ** formatting button to set bold/italic, alignment, and pre-scroll delay.
+5. Click **Record** or press **⌘⌥R**. A 3-second countdown appears, then the setup window hides.
+6. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak.
+7. Press **⌘⌥R** again, or choose **■ Stop Recording** from the menu bar icon, to stop. The recording saves automatically.
 
 ## Keyboard Shortcuts
 
@@ -55,6 +58,31 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 ## Output
 
 Recordings are saved to the Desktop by default (`Radcap_YYYY-MM-DD_HHmmss.mov`). The output directory can be changed in Settings.
+
+---
+
+## FAQ
+
+**Where are my recordings saved?**
+To the Desktop by default, named `Radcap_YYYY-MM-DD_HHmmss.mov`. You can change the output folder in **Settings → Output Directory**.
+
+**macOS says "Radcap can't be opened because it's from an unidentified developer."**
+Radcap is notarized and Developer ID-signed, so this shouldn't happen. If it does, right-click the app and choose **Open** — macOS will remember your choice going forward.
+
+**Camera or microphone access was denied. How do I fix it?**
+Open **System Settings → Privacy & Security**, find Camera and Microphone, and make sure Radcap is enabled. You may need to quit and relaunch the app after granting access.
+
+**The teleprompter isn't scrolling.**
+The teleprompter is voice-activated — it only scrolls while it detects audio. Check that the correct microphone is selected in the setup window and that macOS microphone access is granted. If speech detection feels off, try adjusting **Pre-scroll delay** in the formatting popover.
+
+**Can I use Radcap with a virtual camera (OBS, Camo, etc.)?**
+Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list.
+
+**What's the difference between the output formats?**
+`.mov` captures video and audio together. `.m4a` and `.wav` capture audio only — useful if you just need a voiceover track. `.wav` is uncompressed; `.m4a` is smaller.
+
+**Is Radcap on the Mac App Store?**
+Not yet. Download from the [Releases](https://github.com/sfegette/radcap/releases) page.
 
 ---
 
