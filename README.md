@@ -12,7 +12,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 1. Download `Radcap-<version>.dmg` from the latest release.
 2. Open the DMG and drag **Radcap.app** to your `/Applications` folder.
-3. Double-click to launch — a camera icon will appear in the menu bar.
+3. Double-click to launch — the Radcap icon will appear in the menu bar.
 
 **First launch:** macOS will ask for Camera and Microphone access. Both are required. If a permission prompt doesn't appear, open **System Settings → Privacy & Security** and grant access there.
 
@@ -26,7 +26,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 - **Liquid Glass setup window** — borderless macOS 26 glass panel for camera and script setup
 - **3-2-1 countdown** — full-screen overlay with audio ticks before recording starts so you can compose yourself
 - **Voice-activated teleprompter** — script scrolls while it detects your voice, pauses when you go silent, resumes when you speak; halts automatically when the script ends
-- **Teleprompter formatting** — bold/italic toggles, left/center alignment, font size slider, and a pre-scroll delay — all adjustable in the formatting popover; live preview reflects the recording HUD exactly
+- **Teleprompter formatting** — bold/italic toggles, left/center alignment, and a font size slider — all adjustable in the formatting pop-up beneath the prompter; live preview reflects the recording HUD exactly
 - **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or Settings
 - **Global hotkey** — ⌘⌥R starts and stops recording from any app
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
@@ -41,10 +41,10 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 1. Click the menu bar icon to open the setup window.
 2. Choose your camera, microphone, recording mode, and crop mode.
-3. Open **Settings** (⚙) to paste your teleprompter script, choose your audio format, and adjust scroll speed, font size, and preview opacity.
-4. Use the **Tᴀ** formatting button to set bold/italic, alignment, and pre-scroll delay.
+3. Use the **edit** button beneath the prompter to paste or edit your script, and the formatting pop-up to set text size, bold/italic, and alignment.
+4. Open **Settings** (⚙) to choose your audio format and adjust scroll speed, scrolling delay, and preview opacity.
 5. Click **Record** or press **⌘⌥R**. A 3-second countdown appears, then the setup window hides.
-6. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak.
+6. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak, and stops automatically when it reaches the end.
 7. Press **⌘⌥R** again, or choose **■ Stop Recording** from the menu bar icon, to stop. The recording saves automatically.
 
 ## Keyboard Shortcuts
