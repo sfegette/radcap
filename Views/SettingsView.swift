@@ -35,7 +35,7 @@ struct SettingsView: View {
                             .buttonStyle(.borderless)
                     }
                     if settings.outputDirectory != nil {
-                        Button("Reset to Desktop") {
+                        Button(AppSettings.isSandboxed ? "Reset to Movies" : "Reset to Desktop") {
                             settings.outputDirectory = nil
                         }
                         .buttonStyle(.borderless)
