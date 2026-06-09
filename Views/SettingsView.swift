@@ -42,6 +42,16 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                         .font(.caption)
                     }
+                    LabeledContent("Video Format") {
+                        Picker("", selection: $settings.videoFormat) {
+                            ForEach(AppSettings.VideoFormat.allCases) { f in
+                                Text(f.rawValue).tag(f)
+                            }
+                        }
+                        .labelsHidden()
+                        .help("Container format for video recordings (MOV and MP4 both use H.264)")
+                        .accessibilityLabel("Video Format")
+                    }
                     LabeledContent("Audio Format") {
                         Picker("", selection: $settings.audioFormat) {
                             ForEach(AppSettings.AudioFormat.allCases) { f in

@@ -13,6 +13,14 @@ final class AppSettings: ObservableObject {
         var avFileType: AVFileType  { self == .m4a ? .m4a  : .wav  }
     }
 
+    enum VideoFormat: String, CaseIterable, Identifiable {
+        case mov = "MOV"
+        case mp4 = "MP4"
+        var id: String { rawValue }
+        var fileExtension: String { self == .mov ? "mov" : "mp4" }
+        var avFileType: AVFileType  { self == .mov ? .mov  : .mp4  }
+    }
+
     static var isSandboxed: Bool {
         ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
     }
@@ -21,6 +29,7 @@ final class AppSettings: ObservableObject {
         static let outputDirectoryPath          = "outputDirectoryPath"
         static let outputDirectoryBookmark      = "outputDirectoryBookmark"
         static let audioFormat                  = "audioFormat"
+        static let videoFormat                  = "videoFormat"
         static let teleprompterText             = "teleprompterText"
         static let teleprompterSpeed            = "teleprompterSpeed"
         static let teleprompterFontSize         = "teleprompterFontSize"
@@ -87,6 +96,9 @@ final class AppSettings: ObservableObject {
     @Published var audioFormat: AudioFormat {
         didSet { UserDefaults.standard.set(audioFormat.rawValue, forKey: Key.audioFormat) }
     }
+    @Published var videoFormat: VideoFormat {
+        didSet { UserDefaults.standard.set(videoFormat.rawValue, forKey: Key.videoFormat) }
+    }
 
     private init() {
         if AppSettings.isSandboxed,
@@ -124,6 +136,8 @@ final class AppSettings: ObservableObject {
         recordingPreviewOpacity = opacity > 0 ? opacity : 0.6
         let fmtRaw = UserDefaults.standard.string(forKey: Key.audioFormat) ?? ""
         audioFormat = AudioFormat(rawValue: fmtRaw) ?? .m4a
+        let vfmtRaw = UserDefaults.standard.string(forKey: Key.videoFormat) ?? ""
+        videoFormat = VideoFormat(rawValue: vfmtRaw) ?? .mov
     }
 
     var effectiveOutputDirectory: URL {
