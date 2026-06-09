@@ -30,6 +30,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 - **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or Settings
 - **Global hotkey** — ⌘⌥R starts and stops recording from any app
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
+- **Live device refresh** — camera and microphone lists update instantly when you plug in or remove a device, even while the picker is open; the selection falls back gracefully if a device disappears mid-session
 - **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
 - **Multiple output formats** — `.mov` (video + audio), `.m4a` (AAC), or `.wav` (lossless) for audio-only recordings; format set in Settings
 - **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
@@ -75,8 +76,11 @@ Open **System Settings → Privacy & Security**, find Camera and Microphone, and
 **The teleprompter isn't scrolling.**
 The teleprompter is voice-activated — it only scrolls while it detects audio. Check that the correct microphone is selected in the setup window and that macOS microphone access is granted. If speech detection feels off, try adjusting **Pre-scroll delay** in the formatting popover.
 
+**I plugged in a new microphone (or camera) but it isn't showing up.**
+Radcap's device lists refresh live — plug in or unplug a device and the picker updates immediately, even while it's open. If you're not seeing it, make sure macOS itself recognizes the device (check Audio MIDI Setup or System Information) and that Radcap has microphone/camera permission in System Settings → Privacy & Security.
+
 **Can I use Radcap with a virtual camera (OBS, Camo, etc.)?**
-Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list.
+Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list. Virtual cameras appear and disappear live alongside physical ones.
 
 **What's the difference between the output formats?**
 `.mov` captures video and audio together. `.m4a` (AAC) and `.wav` (lossless) capture audio only — useful if you just need a voiceover track. Set your preferred audio format in **Settings → Audio Format**.
