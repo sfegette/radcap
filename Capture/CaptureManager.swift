@@ -452,9 +452,11 @@ final class CaptureManager: NSObject, ObservableObject {
             }
         }
 
-        // Audio writer input
+        // Audio writer input — MP4 container requires AAC; WAV (Linear PCM) is incompatible.
         let aSettings: [String: Any]
-        if AppSettings.shared.audioFormat == .wav {
+        let useLinearPCM = AppSettings.shared.audioFormat == .wav
+            && !(recordingMode != .audioOnly && AppSettings.shared.videoFormat == .mp4)
+        if useLinearPCM {
             aSettings = [
                 AVFormatIDKey:                kAudioFormatLinearPCM,
                 AVSampleRateKey:              44100.0,
