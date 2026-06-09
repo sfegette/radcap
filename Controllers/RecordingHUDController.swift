@@ -26,6 +26,13 @@ final class RecordingHUDController {
 
     // MARK: - Show / Hide
 
+    // Call before the countdown starts. Creates the pill panel (and its AVCaptureVideoPreviewLayer)
+    // while the countdown is running so the session configuration change doesn't happen at the
+    // exact moment recording starts, which would freeze frame delivery for ~1.5s (#29).
+    func prebuild() {
+        if pillPanel == nil { pillPanel = buildPillPanel() }
+    }
+
     func show() {
         opacityModel.opacity = AppSettings.shared.recordingPreviewOpacity
         // Reset first so the false→true transition always triggers onChange in the view

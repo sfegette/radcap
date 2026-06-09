@@ -24,7 +24,8 @@ final class RecordingCoordinator: ObservableObject {
     func startFlow() {
         guard !captureManager.isRecording, !isCountingDown else { return }
         isCountingDown = true
-        captureManager.prepareForRecording()  // lock focus/exposure/WB before countdown so first frame is clean (#29)
+        captureManager.prepareForRecording()  // lock focus/exposure/WB before countdown (#29)
+        hudController.prebuild()              // attach HUD preview layer NOW so the session config change doesn't freeze frames at recording start (#29)
         floatingWindowController?.hide(stopCamera: false)  // keep session live through countdown
         countdownController.show(from: 3) { [weak self] in
             guard let self else { return }

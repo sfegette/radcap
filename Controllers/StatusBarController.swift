@@ -4,8 +4,6 @@ import Combine
 final class StatusBarController {
     private let statusItem: NSStatusItem
     private var cancellables = Set<AnyCancellable>()
-    private var blinkTimer: Timer?
-    private var blinkOn = true
 
     var onToggleWindow: (() -> Void)?
     weak var coordinator: RecordingCoordinator?
@@ -13,12 +11,11 @@ final class StatusBarController {
     init(captureManager: CaptureManager) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         setupButton()
-        setIcon(recording: false, blink: true)
+        setIcon(recording: false)
         observeRecording(captureManager)
     }
 
     deinit {
-        blinkTimer?.invalidate()
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 
@@ -47,6 +44,8 @@ final class StatusBarController {
         guard let event = NSApp.currentEvent else { return }
         if event.type == .rightMouseUp {
             showContextMenu()
+        } else if coordinator?.captureManager.isRecording == true {
+            coordinator?.stopFlow()
         } else {
             onToggleWindow?()
         }
@@ -80,38 +79,34 @@ final class StatusBarController {
     // MARK: - Icon
 
     private func updateForRecording(_ isRecording: Bool) {
-        blinkTimer?.invalidate()
-        blinkTimer = nil
         updateAccessibility(recording: isRecording)
-
-        if isRecording {
-            blinkOn = true
-            setIcon(recording: true, blink: true)
-            blinkTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { [weak self] _ in
-                guard let self else { return }
-                blinkOn.toggle()
-                setIcon(recording: true, blink: blinkOn)
-            }
-        } else {
-            setIcon(recording: false, blink: true)
-        }
+        setIcon(recording: isRecording)
     }
 
-    private func setIcon(recording: Bool, blink: Bool) {
+    private func setIcon(recording: Bool) {
         guard let button = statusItem.button else { return }
-
-        guard let image = NSImage(named: "MenubarIcon") else { return }
-        image.isTemplate = true
-        image.size = NSSize(width: 18, height: 18)
-        button.image = image
-
-        // Tint red while recording; blink by toggling between red and system tint.
-        button.contentTintColor = (recording && blink) ? .systemRed : nil
+        if recording {
+            // record.circle.fill: outer ring in labelColor, inner disc in red.
+            // paletteColors[0] = primary layer (ring), paletteColors[1] = secondary layer (fill).
+            let sizeConfig  = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            let colorConfig = NSImage.SymbolConfiguration(paletteColors: [NSColor.labelColor, .systemRed])
+            if let img = NSImage(systemSymbolName: "record.circle.fill", accessibilityDescription: "Recording")?
+                .withSymbolConfiguration(sizeConfig.applying(colorConfig)) {
+                button.image = img
+                button.contentTintColor = nil
+            }
+        } else {
+            guard let image = NSImage(named: "MenubarIcon") else { return }
+            image.isTemplate = true
+            image.size = NSSize(width: 18, height: 18)
+            button.image = image
+            button.contentTintColor = nil
+        }
     }
 
     private func updateAccessibility(recording: Bool) {
         guard let button = statusItem.button else { return }
-        button.toolTip = recording ? "Radcap is recording. Click to open controls." : "Open Radcap"
+        button.toolTip = recording ? "Radcap is recording. Click to stop." : "Open Radcap"
         button.setAccessibilityLabel(recording ? "Radcap menu bar item, recording" : "Radcap menu bar item")
         button.setAccessibilityValue(recording ? "Recording" : "Idle")
     }

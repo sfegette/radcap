@@ -50,6 +50,7 @@ final class CaptureManager: NSObject, ObservableObject {
     private var speakingStateInternal = false
     private var speakingHoldWorkItem: DispatchWorkItem?
     private var writerFailureReported = false
+    private var speechDetectionEnabled = false
 
     private var durationTimer: Timer?
 
@@ -522,6 +523,7 @@ final class CaptureManager: NSObject, ObservableObject {
     func stopRecording() {
         guard isRecording else { return }
         isRecording = false
+        speechDetectionEnabled = false
         updateSessionState()
         durationTimer?.invalidate()
         durationTimer = nil
@@ -647,6 +649,7 @@ final class CaptureManager: NSObject, ObservableObject {
     // frame of the recording is clean.
 
     func prepareForRecording() {
+        speechDetectionEnabled = true
         guard let camera = selectedCamera else { return }
         sessionQueue.async {
             guard (try? camera.lockForConfiguration()) != nil else { return }
@@ -658,6 +661,7 @@ final class CaptureManager: NSObject, ObservableObject {
     }
 
     func unprepareForRecording() {
+        speechDetectionEnabled = false
         guard let camera = selectedCamera else { return }
         sessionQueue.async {
             guard (try? camera.lockForConfiguration()) != nil else { return }
@@ -728,9 +732,8 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
 
-        // Voice detection runs whenever audio is flowing — independent of
-        // recording state so the voice gate works even if the writer fails.
-        if output === audioDataOutput {
+        // Voice detection runs only while the recording flow is active (countdown through stop).
+        if output === audioDataOutput, speechDetectionEnabled {
             measureAudioLevel(sampleBuffer)
         }
 
