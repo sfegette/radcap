@@ -20,6 +20,16 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 ---
 
+## What's New in 1.0.2
+
+- **Clean recording start** — Fixed a ~1.5-second frozen-frame glitch at the beginning of every recording. The teleprompter HUD preview layer now initializes during the countdown, not at the moment recording begins, so the first frame is sharp.
+- **Menubar recording indicator** — The menu bar icon switches to a red recording dot (⏺) while recording is active. Click it once to stop; no menu required.
+- **Smarter recording start** — Duplicate Record clicks during the countdown are now ignored. If the writer can't create the output file for any reason, an alert explains what went wrong instead of failing silently.
+- **Capture performance** — Cropped recordings reuse the pixel buffer pool instead of allocating a new buffer every frame. Voice-activity detection no longer runs when Radcap is idle.
+- **Accessibility** — Reduce Transparency and Reduce Motion settings are now respected in the teleprompter HUD.
+
+---
+
 ## Features
 
 - **Menubar recorder** — lives quietly in the menu bar until you need it; no dock icon
@@ -46,7 +56,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 4. Open **Settings** (⚙) to choose your audio format and adjust scroll speed, scrolling delay, and preview opacity.
 5. Click **Record** or press **⌘⌥R**. A 3-second countdown appears, then the setup window hides.
 6. The teleprompter pill and camera preview appear at the top of your screen. The script starts scrolling the moment you speak, and stops automatically when it reaches the end.
-7. Press **⌘⌥R** again, or choose **■ Stop Recording** from the menu bar icon, to stop. The recording saves automatically.
+7. Press **⌘⌥R** again, click the red recording dot in the menu bar, or choose **■ Stop Recording** from the right-click menu to stop. The recording saves automatically.
 
 ## Keyboard Shortcuts
 
@@ -74,7 +84,7 @@ Radcap is notarized and Developer ID-signed, so this shouldn't happen. If it doe
 Open **System Settings → Privacy & Security**, find Camera and Microphone, and make sure Radcap is enabled. You may need to quit and relaunch the app after granting access.
 
 **The teleprompter isn't scrolling.**
-The teleprompter is voice-activated — it only scrolls while it detects audio. Check that the correct microphone is selected in the setup window and that macOS microphone access is granted. If speech detection feels off, try adjusting **Pre-scroll delay** in the formatting popover.
+The teleprompter is voice-activated — it only scrolls while it detects audio. Check that the correct microphone is selected in the setup window and that macOS microphone access is granted. If speech detection feels off, try adjusting **Pre-scroll Pause** in **Settings → Teleprompter**.
 
 **I plugged in a new microphone (or camera) but it isn't showing up.**
 Radcap's device lists refresh live — plug in or unplug a device and the picker updates immediately, even while it's open. If you're not seeing it, make sure macOS itself recognizes the device (check Audio MIDI Setup or System Information) and that Radcap has microphone/camera permission in System Settings → Privacy & Security.
