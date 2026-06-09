@@ -41,17 +41,15 @@ jobs:
                 const callerMatch = body.match(/^caller:\s*(.+)/m);
                 const contextMatch = body.match(/^context:\s*(.+)/m);
                 try {
-                  const res = await fetch('https://tracker.scottfegette.com/api/ping', {
+                  const res = await fetch(`https://tracker.scottfegette.com/api/builds.php?token=${encodeURIComponent(token)}`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      repo: context.repo.repo,
-                      event: 'pipeline-status',
-                      subagent: 'report-pipeline-status',
-                      issue: context.issue.number,
-                      caller: callerMatch ? callerMatch[1].trim() : 'unknown',
-                      context: contextMatch ? contextMatch[1].trim() : '',
-                      timestamp: new Date().toISOString()
+                      repo_name: context.repo.repo,
+                      build_type: 'agent-dispatch',
+                      status: contextMatch ? contextMatch[1].trim() : 'status-report',
+                      triggered_by: callerMatch ? callerMatch[1].trim() : 'agent-dispatch',
+                      branch: 'n/a'
                     })
                   });
                   result = res.ok
