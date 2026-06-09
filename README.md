@@ -20,6 +20,10 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 ---
 
+## What's New in 1.0.3
+
+- **Video format picker** — Choose between MOV and MP4 in **Settings → Output**. Both use H.264; MP4 improves compatibility with YouTube, Instagram, LinkedIn, and non-Apple players. MOV remains the default.
+
 ## What's New in 1.0.2
 
 - **Clean recording start** — Fixed a ~1.5-second frozen-frame glitch at the beginning of every recording. The teleprompter HUD preview layer now initializes during the countdown, not at the moment recording begins, so the first frame is sharp.
@@ -42,7 +46,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 - **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
 - **Live device refresh** — camera and microphone lists update instantly when you plug in or remove a device, even while the picker is open; the selection falls back gracefully if a device disappears mid-session
 - **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
-- **Multiple output formats** — `.mov` (video + audio), `.m4a` (AAC), or `.wav` (lossless) for audio-only recordings; format set in Settings
+- **Multiple output formats** — `.mov` or `.mp4` for video (H.264, selectable in Settings); `.m4a` (AAC) or `.wav` (lossless) for audio-only recordings
 - **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
 - **Accessibility** — full VoiceOver support, keyboard navigation, reduce-motion and reduce-transparency fallbacks
 
@@ -93,7 +97,7 @@ Radcap's device lists refresh live — plug in or unplug a device and the picker
 Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list. Virtual cameras appear and disappear live alongside physical ones.
 
 **What's the difference between the output formats?**
-`.mov` captures video and audio together. `.m4a` (AAC) and `.wav` (lossless) capture audio only — useful if you just need a voiceover track. Set your preferred audio format in **Settings → Audio Format**.
+For video, choose **MOV** or **MP4** in **Settings → Video Format** — both use H.264; MP4 is better for social platforms and non-Apple players. For audio-only recordings, choose **M4A** (AAC) or **WAV** (lossless) in **Settings → Audio Format**.
 
 **Is Radcap on the Mac App Store?**
 Not yet. Download from the [Releases](https://github.com/sfegette/radcap/releases) page.
