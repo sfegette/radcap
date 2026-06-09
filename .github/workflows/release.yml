@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — skips release.sh, just tests runner + tracker reporting'
+        type: boolean
+        default: true
+
+# Needed for gh release create inside release.sh
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    # Runs on the self-hosted macOS runner (this machine) — it has Xcode,
+    # the Developer ID cert, and the radcap-notary keychain profile.
+    # Register/restart the runner: github.com/sfegette/radcap/settings/actions/runners
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 30
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcpretty
+        run: gem list xcpretty -i &>/dev/null || gem install xcpretty --no-document 2>/dev/null || true
+
+      - name: Build and release
+        env:
+          TRACKER_API_TOKEN: ${{ secrets.TRACKER_API_TOKEN }}
+        run: |
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "Dry run — skipping release.sh"
+          else
+            ./scripts/release.sh --ndd
+          fi
