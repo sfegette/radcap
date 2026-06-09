@@ -278,11 +278,24 @@ macOS will verify the app on first launch — if prompted, right-click → Open.
 fi
 
 # --- App Store ---
+# MAS requires a separate archive built with the sandboxed entitlements.
 if $DO_MAS; then
+  MAS_ARCHIVE="$BUILD_DIR/Radcap-AppStore.xcarchive"
   MAS_EXPORT="$BUILD_DIR/export-appstore"
+  echo "▶ Archiving App Store build (sandboxed entitlements)..."
+  xcodebuild archive \
+    -project "$ROOT_DIR/$PROJECT" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -archivePath "$MAS_ARCHIVE" \
+    -derivedDataPath "$BUILD_DIR/DerivedData" \
+    CODE_SIGN_ENTITLEMENTS=Radcap-AppStore.entitlements \
+    -allowProvisioningUpdates \
+    | xcpretty 2>/dev/null || cat
+
   echo "▶ Exporting App Store build..."
   xcodebuild -exportArchive \
-    -archivePath "$ARCHIVE_PATH" \
+    -archivePath "$MAS_ARCHIVE" \
     -exportPath "$MAS_EXPORT" \
     -exportOptionsPlist "$SCRIPTS_DIR/ExportOptions-AppStore.plist" \
     -allowProvisioningUpdates

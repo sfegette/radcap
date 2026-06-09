@@ -13,8 +13,13 @@ final class AppSettings: ObservableObject {
         var avFileType: AVFileType  { self == .m4a ? .m4a  : .wav  }
     }
 
+    static var isSandboxed: Bool {
+        ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
+    }
+
     private enum Key {
         static let outputDirectoryPath          = "outputDirectoryPath"
+        static let outputDirectoryBookmark      = "outputDirectoryBookmark"
         static let audioFormat                  = "audioFormat"
         static let teleprompterText             = "teleprompterText"
         static let teleprompterSpeed            = "teleprompterSpeed"
@@ -30,8 +35,24 @@ final class AppSettings: ObservableObject {
         static let recordingPreviewOpacity      = "recordingPreviewOpacity"
     }
 
+    private var securityScopedURL: URL?
+
     @Published var outputDirectory: URL? {
-        didSet { UserDefaults.standard.set(outputDirectory?.path, forKey: Key.outputDirectoryPath) }
+        didSet {
+            securityScopedURL?.stopAccessingSecurityScopedResource()
+            securityScopedURL = nil
+            guard let url = outputDirectory else {
+                UserDefaults.standard.removeObject(forKey: Key.outputDirectoryPath)
+                UserDefaults.standard.removeObject(forKey: Key.outputDirectoryBookmark)
+                return
+            }
+            UserDefaults.standard.set(url.path, forKey: Key.outputDirectoryPath)
+            if AppSettings.isSandboxed,
+               let bookmark = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                UserDefaults.standard.set(bookmark, forKey: Key.outputDirectoryBookmark)
+                if url.startAccessingSecurityScopedResource() { securityScopedURL = url }
+            }
+        }
     }
     @Published var teleprompterText: String {
         didSet { UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText) }
@@ -68,7 +89,21 @@ final class AppSettings: ObservableObject {
     }
 
     private init() {
-        if let path = UserDefaults.standard.string(forKey: Key.outputDirectoryPath) {
+        if AppSettings.isSandboxed,
+           let bookmarkData = UserDefaults.standard.data(forKey: Key.outputDirectoryBookmark) {
+            var isStale = false
+            if let url = try? URL(resolvingBookmarkData: bookmarkData,
+                                  options: .withSecurityScope,
+                                  relativeTo: nil,
+                                  bookmarkDataIsStale: &isStale) {
+                outputDirectory = url
+                if url.startAccessingSecurityScopedResource() { securityScopedURL = url }
+                if isStale,
+                   let fresh = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil) {
+                    UserDefaults.standard.set(fresh, forKey: Key.outputDirectoryBookmark)
+                }
+            }
+        } else if let path = UserDefaults.standard.string(forKey: Key.outputDirectoryPath) {
             outputDirectory = URL(fileURLWithPath: path)
         }
         teleprompterText = UserDefaults.standard.string(forKey: Key.teleprompterText) ?? ""
@@ -92,6 +127,8 @@ final class AppSettings: ObservableObject {
     }
 
     var effectiveOutputDirectory: URL {
-        outputDirectory ?? FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
+        if let dir = outputDirectory { return dir }
+        let fallbackSearch: FileManager.SearchPathDirectory = AppSettings.isSandboxed ? .moviesDirectory : .desktopDirectory
+        return FileManager.default.urls(for: fallbackSearch, in: .userDomainMask)[0]
     }
 }

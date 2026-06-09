@@ -78,6 +78,11 @@ final class CaptureManager: NSObject, ObservableObject {
             guard let error = note.userInfo?[AVCaptureSessionErrorKey] as? Error else { return }
             DispatchQueue.main.async { self?.lastError = "Session error: \(error.localizedDescription)" }
         }
+        for name in [AVCaptureDevice.wasConnectedNotification, AVCaptureDevice.wasDisconnectedNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.discoverDevices()
+            }
+        }
         requestPermissionsAndConfigure()
     }
 
@@ -137,14 +142,14 @@ final class CaptureManager: NSObject, ObservableObject {
             deviceTypes: micTypes, mediaType: .audio, position: .unspecified
         ).devices
 
-        // Already called on main thread; set synchronously so configureSession()
-        // sees the devices when it dispatches to sessionQueue immediately after.
+        // Called on main thread; set synchronously so configureSession() sees the devices
+        // when it dispatches to sessionQueue immediately after.
         availableCameras = cameras
-        if selectedCamera == nil {
+        if selectedCamera == nil || !cameras.contains(where: { $0.uniqueID == selectedCamera?.uniqueID }) {
             selectedCamera = AVCaptureDevice.default(for: .video) ?? cameras.first
         }
         availableMicrophones = mics
-        if selectedMicrophone == nil {
+        if selectedMicrophone == nil || !mics.contains(where: { $0.uniqueID == selectedMicrophone?.uniqueID }) {
             selectedMicrophone = AVCaptureDevice.default(for: .audio) ?? mics.first
         }
     }
@@ -153,6 +158,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
     func setWindowVisible(_ visible: Bool) {
         windowVisible = visible
+        if visible { discoverDevices() }
         updateSessionState()
     }
 
