@@ -24,7 +24,6 @@ final class CaptureManager: NSObject, ObservableObject {
     @Published var isSpeaking = false
     private(set) var windowVisible = false
 
-    private var speakingHoldTimer: Timer?
     private let speechThreshold: Float = 0.008   // RMS ≈ -42 dBFS
     private var rmsLogCounter = 0
     private var micConfigureRetried = false
@@ -48,6 +47,9 @@ final class CaptureManager: NSObject, ObservableObject {
     private var sessionStarted = false
     private var isRecordingInternal = false
     private var activeCropRect: CGRect = .zero
+    private var speakingStateInternal = false
+    private var speakingHoldWorkItem: DispatchWorkItem?
+    private var writerFailureReported = false
 
     private var durationTimer: Timer?
 
@@ -398,10 +400,14 @@ final class CaptureManager: NSObject, ObservableObject {
 
     // MARK: - Recording
 
-    func toggleRecording() { isRecording ? stopRecording() : startRecording() }
+    func toggleRecording() {
+        if isRecording { stopRecording() } else { _ = startRecording() }
+    }
 
-    func startRecording() {
-        guard !isRecording else { return }
+    @discardableResult
+    func startRecording() -> Bool {
+        guard !isRecording else { return false }
+        lastError = nil
 
         let sourceDims: CMVideoDimensions
         if let camera = selectedCamera {
@@ -417,7 +423,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
         guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: fileType) else {
             DispatchQueue.main.async { self.lastError = "Could not create output file at \(outputURL.path)." }
-            return
+            return false
         }
 
         // Video writer input
@@ -450,6 +456,11 @@ final class CaptureManager: NSObject, ObservableObject {
                     sourcePixelBufferAttributes: pixelAttrs
                 )
             }
+
+            guard vInput != nil else {
+                DispatchQueue.main.async { self.lastError = "Could not configure video encoding for the recording." }
+                return false
+            }
         }
 
         // Audio writer input
@@ -473,9 +484,18 @@ final class CaptureManager: NSObject, ObservableObject {
         }
         let ai = AVAssetWriterInput(mediaType: .audio, outputSettings: aSettings)
         ai.expectsMediaDataInRealTime = true
-        if writer.canAdd(ai) { writer.add(ai) }
+        guard writer.canAdd(ai) else {
+            DispatchQueue.main.async { self.lastError = "Could not configure audio encoding for the recording." }
+            return false
+        }
+        writer.add(ai)
 
-        writer.startWriting()
+        guard writer.startWriting() else {
+            DispatchQueue.main.async {
+                self.lastError = self.writerErrorMessage(prefix: "Could not start recording", writer: writer, outputURL: outputURL)
+            }
+            return false
+        }
 
         outputQueue.async { [weak self] in
             guard let self else { return }
@@ -486,6 +506,8 @@ final class CaptureManager: NSObject, ObservableObject {
             self.activeCropRect     = cropRect
             self.sessionStarted     = false
             self.isRecordingInternal = true
+            self.writerFailureReported = false
+            self.resetSpeakingState()
         }
 
         isRecording = true
@@ -494,6 +516,7 @@ final class CaptureManager: NSObject, ObservableObject {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             self?.recordingDuration += 1
         }
+        return true
     }
 
     func stopRecording() {
@@ -502,22 +525,32 @@ final class CaptureManager: NSObject, ObservableObject {
         updateSessionState()
         durationTimer?.invalidate()
         durationTimer = nil
-        speakingHoldTimer?.invalidate()
-        speakingHoldTimer = nil
         isSpeaking = false
 
         outputQueue.async { [weak self] in
             guard let self else { return }
             self.isRecordingInternal = false
+            self.resetSpeakingState()
             self.videoWriterInput?.markAsFinished()
             self.audioWriterInput?.markAsFinished()
             let writer = self.assetWriter
+            let outputURL = writer?.outputURL
             self.assetWriter        = nil
             self.videoWriterInput   = nil
             self.audioWriterInput   = nil
             self.pixelBufferAdaptor = nil
             self.sessionStarted     = false
-            writer?.finishWriting {}
+            switch writer?.status {
+            case .some(.writing):
+                writer?.finishWriting { [weak self] in self?.handleWriterCompletion(writer, outputURL: outputURL) }
+            case .some(.unknown):
+                writer?.cancelWriting()
+                self.handleWriterCompletion(writer, outputURL: outputURL)
+            case .some:
+                self.handleWriterCompletion(writer, outputURL: outputURL)
+            case .none:
+                break
+            }
         }
     }
 
@@ -565,7 +598,7 @@ final class CaptureManager: NSObject, ObservableObject {
 
     // MARK: - Pixel Buffer Crop
 
-    private func cropPixelBuffer(_ src: CVPixelBuffer, to rect: CGRect) -> CVPixelBuffer? {
+    private func cropPixelBuffer(_ src: CVPixelBuffer, to rect: CGRect, using pool: CVPixelBufferPool? = nil) -> CVPixelBuffer? {
         CVPixelBufferLockBaseAddress(src, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(src, .readOnly) }
 
@@ -583,8 +616,13 @@ final class CaptureManager: NSObject, ObservableObject {
         guard cw > 0, ch > 0 else { return nil }
 
         var dst: CVPixelBuffer?
-        guard CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst) == kCVReturnSuccess,
-              let dst else { return nil }
+        let createStatus: CVReturn
+        if let pool, CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &dst) == kCVReturnSuccess {
+            createStatus = kCVReturnSuccess
+        } else {
+            createStatus = CVPixelBufferCreate(kCFAllocatorDefault, cw, ch, fmt, nil, &dst)
+        }
+        guard createStatus == kCVReturnSuccess, let dst else { return nil }
 
         CVPixelBufferLockBaseAddress(dst, [])
         defer { CVPixelBufferUnlockBaseAddress(dst, []) }
@@ -599,6 +637,85 @@ final class CaptureManager: NSObject, ObservableObject {
             )
         }
         return dst
+    }
+
+    // MARK: - Camera warmup (issue #29)
+    //
+    // Lock focus/exposure/WB at the start of the countdown so the camera cannot
+    // re-adjust when the UI changes (window hides, overlay appears). The settings
+    // are already stable at this point — locking just freezes them so the first
+    // frame of the recording is clean.
+
+    func prepareForRecording() {
+        guard let camera = selectedCamera else { return }
+        sessionQueue.async {
+            guard (try? camera.lockForConfiguration()) != nil else { return }
+            if camera.isFocusModeSupported(.locked)         { camera.focusMode         = .locked }
+            if camera.isExposureModeSupported(.locked)      { camera.exposureMode      = .locked }
+            if camera.isWhiteBalanceModeSupported(.locked)  { camera.whiteBalanceMode  = .locked }
+            camera.unlockForConfiguration()
+        }
+    }
+
+    func unprepareForRecording() {
+        guard let camera = selectedCamera else { return }
+        sessionQueue.async {
+            guard (try? camera.lockForConfiguration()) != nil else { return }
+            if camera.isFocusModeSupported(.continuousAutoFocus)         { camera.focusMode         = .continuousAutoFocus }
+            if camera.isExposureModeSupported(.continuousAutoExposure)   { camera.exposureMode      = .continuousAutoExposure }
+            if camera.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) { camera.whiteBalanceMode = .continuousAutoWhiteBalance }
+            camera.unlockForConfiguration()
+        }
+    }
+
+    // MARK: - Writer completion (PR #24 / issue #20)
+
+    private func handleWriterCompletion(_ writer: AVAssetWriter?, outputURL: URL?) {
+        guard let writer else { return }
+        switch writer.status {
+        case .completed:
+            log.info("Recording finalized: \(outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent)")
+        case .failed:
+            publishWriterFailureIfNeeded(writerErrorMessage(prefix: "Recording could not be saved", writer: writer, outputURL: outputURL))
+        case .cancelled:
+            publishWriterFailureIfNeeded(writerErrorMessage(prefix: "Recording was cancelled", writer: writer, outputURL: outputURL))
+        case .unknown:
+            publishWriterFailureIfNeeded(writerErrorMessage(prefix: "Recording stopped before the file could be finalized", writer: writer, outputURL: outputURL))
+        case .writing:
+            publishWriterFailureIfNeeded("Recording is still writing and did not finish cleanly.")
+        @unknown default:
+            publishWriterFailureIfNeeded("Recording ended in an unknown writer state.")
+        }
+    }
+
+    private func writerErrorMessage(prefix: String, writer: AVAssetWriter, outputURL: URL?) -> String {
+        let file = outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent
+        if let err = writer.error?.localizedDescription, !err.isEmpty { return "\(prefix) for \(file): \(err)" }
+        return "\(prefix) for \(file)."
+    }
+
+    private func publishWriterFailureIfNeeded(_ message: String) {
+        guard !writerFailureReported else { return }
+        writerFailureReported = true
+        log.error("\(message)")
+        DispatchQueue.main.async { [weak self] in self?.lastError = message }
+    }
+
+    // MARK: - Speaking state (PR #25 / issue #19)
+
+    private func resetSpeakingState() {
+        speakingHoldWorkItem?.cancel()
+        speakingHoldWorkItem = nil
+        speakingStateInternal = false
+    }
+
+    private func publishSpeakingState(_ speaking: Bool, rms: Float? = nil) {
+        DispatchQueue.main.async { [weak self] in self?.isSpeaking = speaking }
+        if speaking, let rms {
+            log.debug("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+        } else if !speaking {
+            log.debug("isSpeaking → false")
+        }
     }
 }
 
@@ -618,8 +735,15 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         }
 
         guard isRecordingInternal,
-              let writer = assetWriter,
-              writer.status == .writing else { return }
+              let writer = assetWriter else { return }
+
+        if writer.status == .failed || writer.status == .cancelled {
+            isRecordingInternal = false
+            publishWriterFailureIfNeeded(writerErrorMessage(prefix: "Recording failed while writing", writer: writer, outputURL: writer.outputURL))
+            return
+        }
+
+        guard writer.status == .writing else { return }
 
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
 
@@ -638,7 +762,7 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             } else if let adaptor = pixelBufferAdaptor,
                       adaptor.assetWriterInput.isReadyForMoreMediaData,
                       let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-                      let cropped = cropPixelBuffer(imageBuffer, to: activeCropRect) {
+                      let cropped = cropPixelBuffer(imageBuffer, to: activeCropRect, using: adaptor.pixelBufferPool) {
                 adaptor.append(cropped, withPresentationTime: pts)
             } else {
                 vInput.append(sampleBuffer)
@@ -704,24 +828,30 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
             log.debug("Audio RMS: \(rms, format: .fixed(precision: 5)) threshold: \(self.speechThreshold)")
         }
 
-        DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
+        updateSpeakingState(rms: rms)
     }
 
-    // Hold "speaking" for 400ms after audio drops below threshold to smooth
+    // Called on outputQueue. Only edge transitions dispatch to the main thread.
+    // Hold "speaking" for 800ms after audio drops below threshold to smooth
     // over natural breath gaps and brief mid-sentence pauses.
     private func updateSpeakingState(rms: Float) {
         if rms > speechThreshold {
-            speakingHoldTimer?.invalidate()
-            speakingHoldTimer = nil
-            if !isSpeaking {
-                isSpeaking = true
-                log.debug("isSpeaking → true (rms=\(rms, format: .fixed(precision: 5)))")
+            speakingHoldWorkItem?.cancel()
+            speakingHoldWorkItem = nil
+            if !speakingStateInternal {
+                speakingStateInternal = true
+                publishSpeakingState(true, rms: rms)
             }
-        } else if isSpeaking, speakingHoldTimer == nil {
-            speakingHoldTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
-                self?.isSpeaking = false
-                self?.speakingHoldTimer = nil
+        } else if speakingStateInternal, speakingHoldWorkItem == nil {
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                self.speakingHoldWorkItem = nil
+                guard self.speakingStateInternal else { return }
+                self.speakingStateInternal = false
+                self.publishSpeakingState(false)
             }
+            speakingHoldWorkItem = workItem
+            outputQueue.asyncAfter(deadline: .now() + 0.8, execute: workItem)
         }
     }
 
