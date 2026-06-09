@@ -36,13 +36,51 @@ radcap is a leaf node in the Brilliant Mindworks five-repo agent network. It own
 
 ## Build & Run
 
-> TODO: Document build commands, Xcode scheme, test target, simulator destination.
+**Project:** `Radcap.xcodeproj` (generated via XcodeGen from `project.yml`)  
+**Scheme:** `Radcap`  
+**Platform:** macOS 14.0+  
+**Bundle ID:** `com.sfegette.radcap`
+
+Regenerate the Xcode project after editing `project.yml`:
+```
+xcodegen generate
+```
+
+**Release builds** use `scripts/release.sh` — never invoke `xcodebuild` directly for releases:
+```
+./scripts/release.sh --local-test   # Dev-signed build for local verification
+./scripts/release.sh --ndd          # Notarize + tag + GitHub Release
+./scripts/release.sh --ndd --no-tag # Notarize + GitHub Release, skip tag push
+./scripts/release.sh                # Full: NDD + App Store exports
+```
+
+No automated test target exists yet. Manual verification is the current QA path.
 
 ---
 
 ## Architecture
 
-> TODO: Document app architecture, key files, state management, and design decisions.
+radcap is a macOS menubar app (`.accessory` activation policy — no Dock icon). SwiftUI is used for views; AppKit for window/controller lifecycle.
+
+**Entry point:** `RadcapApp.swift` → `@NSApplicationDelegateAdaptor(AppDelegate.self)`
+
+**Core objects and wiring (all owned by `AppDelegate`):**
+
+| Class | Role |
+|---|---|
+| `CaptureManager` | AVFoundation session owner — camera, mic, `AVAssetWriter` recording |
+| `RecordingCoordinator` | Orchestrates the record flow: countdown → start → HUD → stop |
+| `StatusBarController` | Menubar icon + menu; global hotkey toggle entry point |
+| `FloatingWindowController` | Camera preview window (shown at rest, hidden during recording) |
+| `RecordingHUDController` | Transparent overlay shown during active recording |
+| `CountdownWindowController` | 3-2-1 countdown overlay before recording starts |
+| `GlobalHotkeyManager` | Carbon-based global hotkey (⌥⌘R) to start/stop from anywhere |
+| `AppSettings` | `@AppStorage`-backed user preferences (format, resolution, etc.) |
+
+**Key design decisions:**
+- `CaptureManager` calls `prepareForRecording()` + `hudController.prebuild()` before the countdown starts to lock camera focus/exposure and pre-attach the HUD preview layer — prevents frozen frames at recording start (fix for GH #29)
+- No SwiftUI `WindowGroup` for the main window; window lifecycle is fully AppKit-managed via `FloatingWindowController`
+- Settings UI lives in a sheet on `FloatingWindowController`, not a separate `Settings` scene (`Settings { EmptyView() }` suppresses the default Preferences menu item)
 
 ---
 
