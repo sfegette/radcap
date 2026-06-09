@@ -413,7 +413,7 @@ final class CaptureManager: NSObject, ObservableObject {
         let cropRect = makeCropRect(source: sourceDims, output: outDims)
 
         let outputURL = generateOutputURL()
-        let fileType: AVFileType = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.avFileType : .mov
+        let fileType: AVFileType = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.avFileType : AppSettings.shared.videoFormat.avFileType
 
         guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: fileType) else {
             DispatchQueue.main.async { self.lastError = "Could not create output file at \(outputURL.path)." }
@@ -550,7 +550,7 @@ final class CaptureManager: NSObject, ObservableObject {
     private func generateOutputURL() -> URL {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
-        let ext = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.fileExtension : "mov"
+        let ext = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.fileExtension : AppSettings.shared.videoFormat.fileExtension
         let name = "Radcap_\(fmt.string(from: Date())).\(ext)"
         return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
     }
