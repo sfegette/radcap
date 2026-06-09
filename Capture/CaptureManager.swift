@@ -307,6 +307,7 @@ final class CaptureManager: NSObject, ObservableObject {
                self.captureSession.canAddInput(input) {
                 self.captureSession.addInput(input)
                 self.currentVideoInput = input
+                self.applyPreferredCameraConfiguration(to: camera)
             }
 
             let mic = self.selectedMicrophone ?? AVCaptureDevice.default(for: .audio)
@@ -335,6 +336,11 @@ final class CaptureManager: NSObject, ObservableObject {
             self.videoDataOutput.setSampleBufferDelegate(self, queue: self.outputQueue)
             if self.captureSession.canAddOutput(self.videoDataOutput) {
                 self.captureSession.addOutput(self.videoDataOutput)
+                if let connection = self.videoDataOutput.connection(with: .video),
+                   connection.isVideoMirroringSupported {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                    connection.isVideoMirrored = false
+                }
             }
 
             self.audioDataOutput.setSampleBufferDelegate(self, queue: self.outputQueue)
@@ -367,6 +373,7 @@ final class CaptureManager: NSObject, ObservableObject {
                self.captureSession.canAddInput(input) {
                 self.captureSession.addInput(input)
                 self.currentVideoInput = input
+                self.applyPreferredCameraConfiguration(to: device)
             }
             self.captureSession.commitConfiguration()
         }
@@ -705,6 +712,38 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         }
 
         DispatchQueue.main.async { [weak self] in self?.updateSpeakingState(rms: rms) }
+    }
+
+    // MARK: - Camera Configuration Helpers
+
+    /// Applies preferred capture settings (AF/AE/AWB continuous, 30fps lock) to
+    /// a camera device. Called during session setup and camera switching so the
+    /// camera can stabilise during the idle window and countdown — well before
+    /// recording actually starts.
+    private func applyPreferredCameraConfiguration(to device: AVCaptureDevice) {
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+            let fps30 = CMTime(value: 1, timescale: 30)
+            let supports30fps = device.activeFormat.videoSupportedFrameRateRanges.contains {
+                $0.minFrameRate <= 30 && 30 <= $0.maxFrameRate
+            }
+            if supports30fps {
+                device.activeVideoMinFrameDuration = fps30
+                device.activeVideoMaxFrameDuration = fps30
+            }
+            if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposureMode = .continuousAutoExposure
+            }
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        } catch {
+            log.error("Could not apply preferred camera configuration: \(error.localizedDescription)")
+        }
     }
 
     // Hold "speaking" for 400ms after audio drops below threshold to smooth
