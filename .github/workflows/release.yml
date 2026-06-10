@@ -50,3 +50,21 @@ jobs:
           else
             ./scripts/release.sh --ndd --no-tag
           fi
+
+      - name: Dispatch app-page update to brilliant-web
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true') }}
+        env:
+          GH_TOKEN: ${{ secrets.BRILLIANT_WEB_PAT }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          CHANGELOG=$(git log -1 --pretty=format:"%s")
+          gh issue create \
+            --repo sfegette/brilliant-web \
+            --title "agent-dispatch: update-app-page $VERSION" \
+            --label agent-dispatch \
+            --body "subagent: update-app-page
+          params:
+            version: $VERSION
+            changelog: $CHANGELOG
+          caller: radcap/${{ github.run_id }}
+          context: automated dispatch from radcap release.yml"
