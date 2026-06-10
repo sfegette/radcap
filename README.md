@@ -16,7 +16,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 **First launch:** macOS will ask for Camera and Microphone access. Both are required. If a permission prompt doesn't appear, open **System Settings → Privacy & Security** and grant access there.
 
-> Radcap is notarized and Developer ID-signed. macOS will verify it automatically on first launch — for Gatekeeper workarounds needed.
+> Radcap is notarized and Developer ID-signed. macOS will verify it automatically on first launch — no Gatekeeper workarounds needed.
 
 ---
 
