@@ -16,9 +16,14 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 **First launch:** macOS will ask for Camera and Microphone access. Both are required. If a permission prompt doesn't appear, open **System Settings → Privacy & Security** and grant access there.
 
-> Radcap is notarized and Developer ID-signed. macOS will verify it automatically on first launch — no Gatekeeper workarounds needed.
+> Radcap is notarized and Developer ID-signed. macOS will verify it automatically on first launch — for Gatekeeper workarounds needed.
 
 ---
+
+## What's New in 1.0.4
+
+- **Recording crash fix** — Fixed a crash (SIGABRT) that occurred when recording after switching between video formats (MOV ↔ mp4) while **Audio-only Format** was set to WAV. Audio settings are now derived from AVFoundation's recommended defaults for each container, which are always valid and match your microphone's native sample rate.
+- **Renamed "Audio Format" → "Audio-only Format"** — The label in Settings more clearly reflects that this setting applies to audio-only recordings, not to the audio track in video recordings.
 
 ## What's New in 1.0.3
 
@@ -26,29 +31,29 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 
 ## What's New in 1.0.2
 
-- **Clean recording start** — Fixed a ~1.5-second frozen-frame glitch at the beginning of every recording. The teleprompter HUD preview layer now initializes during the countdown, not at the moment recording begins, so the first frame is sharp.
-- **Menubar recording indicator** — The menu bar icon switches to a red recording dot (⏺) while recording is active. Click it once to stop; no menu required.
-- **Smarter recording start** — Duplicate Record clicks during the countdown are now ignored. If the writer can't create the output file for any reason, an alert explains what went wrong instead of failing silently.
-- **Capture performance** — Cropped recordings reuse the pixel buffer pool instead of allocating a new buffer every frame. Voice-activity detection no longer runs when Radcap is idle.
-- **Accessibility** — Reduce Transparency and Reduce Motion settings are now respected in the teleprompter HUD.
+- **Clean recording start** - Fixed a ~1.5-second frozen-frame glitch at the beginning of every recording. The teleprompter HUD preview layer now initializes during the countdown, not at the moment recording begins, so the first frame is sharp.
+- **Menubar recording indicator** - The menu bar icon switches to a red recording dot (⏺) while recording is active. Click it once to stop; no menu required.
+- **Smarter recording start** - Duplicate Record clicks during the countdown are now ignored. If the writer can't create the output file for any reason, an alert explains what went wrong instead of failing silently.
+- **Capture performance** - Cropped recordings reuse the pixel buffer pool instead of allocating a new buffer every frame. Voice-activity detection no longer runs when Radcap is idle.
+- **Accessibility** - Reduce Transparency and Reduce Motion settings are now respected in the teleprompter HUD.
 
 ---
 
 ## Features
 
-- **Menubar recorder** — lives quietly in the menu bar until you need it; no dock icon
-- **Liquid Glass setup window** — borderless macOS 26 glass panel for camera and script setup
-- **3-2-1 countdown** — full-screen overlay with audio ticks before recording starts so you can compose yourself
-- **Voice-activated teleprompter** — script scrolls while it detects your voice, pauses when you go silent, resumes when you speak; halts automatically when the script ends
-- **Teleprompter formatting** — bold/italic toggles, left/center alignment, and a font size slider — all adjustable in the formatting pop-up beneath the prompter; live preview reflects the recording HUD exactly
-- **Camera preview** — semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or Settings
-- **Global hotkey** — ⌘⌥R starts and stops recording from any app
-- **Live speed control** — ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
-- **Live device refresh** — camera and microphone lists update instantly when you plug in or remove a device, even while the picker is open; the selection falls back gracefully if a device disappears mid-session
-- **Camera lifecycle** — camera only activates when the setup window is open or a recording is live
-- **Multiple output formats** — `.mov` or `.mp4` for video (H.264, selectable in Settings); `.m4a` (AAC) or `.wav` (lossless) for audio-only recordings
-- **Crop modes** — Full Frame, Square (1:1), or Vertical (9:16)
-- **Accessibility** — full VoiceOver support, keyboard navigation, reduce-motion and reduce-transparency fallbacks
+- **Menubar recorder** - lives quietly in the menu bar until you need it; no dock icon
+- **Liquid Glass setup window** - borderless macOS 26 glass panel for camera and script setup
+- **3-2-1 countdown** - full-screen overlay with audio ticks before recording starts so you can compose yourself
+- **Voice-activated teleprompter** - script scrolls while it detects your voice, pauses when you go silent, resumes when you speak; halts automatically when the script ends
+- **Teleprompter formatting** - bold/italic toggles, left/center alignment, and a font size slider - all adjustable in the formatting pop-up beneath the prompter; live preview reflects the recording HUD exactly
+- **Camera preview** - semi-transparent preview beneath the teleprompter; opacity adjustable via scroll wheel or Settings
+- **Global hotkey** - ⌘⌥R starts and stops recording from any app
+- **Live speed control** - ↑/↓ arrows tune teleprompter speed in 5 % steps during recording, with a full-screen indicator
+- **Live device refresh** - camera and microphone lists update instantly when you plug in or in remove a device, even while the picker is open; the selection falls back gracefully if a device disappears mid-session
+- **Camera lifecycle** - camera only activates when the setup window is open or a recording is live
+- **Multiple output formats** - `.mov` or `.mp4` for video (H.264, selectable in Settings); `.m4a` (AAC) or `.wav` (lossless) for audio-only recordings
+- **Crop modes** - Full Frame, Square (1:1), or Vertical (9:16)
+- **Accessibility** - full VoiceOver support, keyboard navigation, reduce-motion and reduce-transparency fallbacks
 
 ---
 
@@ -65,7 +70,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 ## Keyboard Shortcuts
 
 | Shortcut | When | Action |
-|---|---|---|
+|-{---|---|
 | ⌘⌥R | Any time | Start / stop recording |
 | ↑ | During recording | Teleprompter speed +5 % |
 | ↓ | During recording | Teleprompter speed −5 % |
@@ -82,7 +87,7 @@ Recordings are saved to the Desktop by default (`Radcap_YYYY-MM-DD_HHmmss.mov`).
 To the Desktop by default, named `Radcap_YYYY-MM-DD_HHmmss.mov`. You can change the output folder in **Settings → Output Directory**.
 
 **macOS says "Radcap can't be opened because it's from an unidentified developer."**
-Radcap is notarized and Developer ID-signed, so this shouldn't happen. If it does, right-click the app and choose **Open** — macOS will remember your choice going forward.
+Radcap is notarized and Developer ID-signed, so this shouldn't happen. If it does, right-click the app and choose **Open** —"macOS will remember your choice going forward.
 
 **Camera or microphone access was denied. How do I fix it?**
 Open **System Settings → Privacy & Security**, find Camera and Microphone, and make sure Radcap is enabled. You may need to quit and relaunch the app after granting access.
@@ -97,7 +102,7 @@ Radcap's device lists refresh live — plug in or unplug a device and the picker
 Yes — any camera that appears in macOS's camera picker will show up in Radcap's device list. Virtual cameras appear and disappear live alongside physical ones.
 
 **What's the difference between the output formats?**
-For video, choose **MOV** or **MP4** in **Settings → Video Format** — both use H.264; MP4 is better for social platforms and non-Apple players. For audio-only recordings, choose **M4A** (AAC) or **WAV** (lossless) in **Settings → Audio Format**.
+For video, choose **MOV** or **MP4** in **Settings → Video Format** — both use H.264; MP4 is better for social platforms and non-Apple players. For audio-only recordings, choose **M4A** (AAC) or **WAV** (lossless) in **Settings → Audio-only Format**.
 
 **Is Radcap on the Mac App Store?**
 Not yet. Download from the [Releases](https://github.com/sfegette/radcap/releases) page.
