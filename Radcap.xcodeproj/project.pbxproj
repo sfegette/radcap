@@ -14,6 +14,7 @@
 		31E55A5A5A4E371E77D29909 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19DDC9809C625AECC47F717 /* ContentView.swift */; };
 		422BDCD440472A754593F489 /* CountdownWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 762C0A7C6F8BFD4B32D0EE95 /* CountdownWindowController.swift */; };
 		4AB67E2AD01B1B7B45D99ED7 /* GlobalHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0D3492427A4E1AA062EC95 /* GlobalHotkeyManager.swift */; };
+		68AB6181074ABCF2C8F18EF2 /* RecordingFunctionalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 820E81D1B101D57B6CAB68C2 /* RecordingFunctionalTests.swift */; };
 		6A22238C8FA717488ACE31AC /* FloatingWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1665DED83FC318648533AD85 /* FloatingWindowController.swift */; };
 		75B438430EAE3DCC3D5E9F66 /* RecordingHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 034B0C7DD9E8B50163D41B12 /* RecordingHUDController.swift */; };
 		79591BFBE12B3411C58B9D44 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */; };
@@ -28,6 +29,16 @@
 		F6A443559D141B8E071FA137 /* RecordingPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A88A1F6BCB6ABF480FB1504 /* RecordingPreviewView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E26A1352DDD460A7EB0CA2C9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B8E0E1A9659B21DE63E4A2BF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B87D045DF6D518AB0382877B;
+			remoteInfo = Radcap;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		034B0C7DD9E8B50163D41B12 /* RecordingHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingHUDController.swift; sourceTree = "<group>"; };
 		1665DED83FC318648533AD85 /* FloatingWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingWindowController.swift; sourceTree = "<group>"; };
@@ -40,6 +51,8 @@
 		61BE6C3A82D485D6C46997F3 /* CountdownOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownOverlayView.swift; sourceTree = "<group>"; };
 		6C0D3492427A4E1AA062EC95 /* GlobalHotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeyManager.swift; sourceTree = "<group>"; };
 		762C0A7C6F8BFD4B32D0EE95 /* CountdownWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownWindowController.swift; sourceTree = "<group>"; };
+		7988ED0C6E0A20F8C698449A /* RadcapTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RadcapTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		820E81D1B101D57B6CAB68C2 /* RecordingFunctionalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingFunctionalTests.swift; sourceTree = "<group>"; };
 		93C80F9D03CD308AEAE48D45 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9BA25A73E0389187EDD60932 /* CameraPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreviewView.swift; sourceTree = "<group>"; };
 		AD05FC25FF13770605826411 /* CaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureManager.swift; sourceTree = "<group>"; };
@@ -51,12 +64,12 @@
 		FBC6BDBEEB8E551D9373F002 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-
 /* Begin PBXGroup section */
 		3A96378F5D1660922E15BA6A /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				5E7EDBD04EFCCEABCE5DEC22 /* Radcap.app */,
+				7988ED0C6E0A20F8C698449A /* RadcapTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,6 +95,14 @@
 				3ACA173DECF1829199972AA7 /* StatusBarController.swift */,
 			);
 			path = Controllers;
+			sourceTree = "<group>";
+		};
+		7BCDBFFD5D5CDBDF1F46CC17 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				820E81D1B101D57B6CAB68C2 /* RecordingFunctionalTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		975A260DFF0CDCC8E679BAF7 /* Views */ = {
@@ -122,6 +143,7 @@
 				BECAB3506B146BB0F7478B2E /* Capture */,
 				604727B7266953C5478C8EF3 /* Controllers */,
 				C4D7E9B57437621E3BC08F54 /* Models */,
+				7BCDBFFD5D5CDBDF1F46CC17 /* Tests */,
 				975A260DFF0CDCC8E679BAF7 /* Views */,
 				3A96378F5D1660922E15BA6A /* Products */,
 			);
@@ -130,6 +152,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		816868102708DE6E2E530CAC /* RadcapTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3EB0FB6EC581A88F179B0C9 /* Build configuration list for PBXNativeTarget "RadcapTests" */;
+			buildPhases = (
+				4EDA16F8D14424BA47A08668 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				97D6F5465E026F8DE85FE91D /* PBXTargetDependency */,
+			);
+			name = RadcapTests;
+			packageProductDependencies = (
+			);
+			productName = RadcapTests;
+			productReference = 7988ED0C6E0A20F8C698449A /* RadcapTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		B87D045DF6D518AB0382877B /* Radcap */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CA6746CA58737716E6F5C10B /* Build configuration list for PBXNativeTarget "Radcap" */;
@@ -140,8 +180,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
 			);
 			name = Radcap;
 			packageProductDependencies = (
@@ -180,6 +218,7 @@
 			projectRoot = "";
 			targets = (
 				B87D045DF6D518AB0382877B /* Radcap */,
+				816868102708DE6E2E530CAC /* RadcapTests */,
 			);
 		};
 /* End PBXProject section */
@@ -196,6 +235,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4EDA16F8D14424BA47A08668 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68AB6181074ABCF2C8F18EF2 /* RecordingFunctionalTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9C56F5F41B8D2ED7A59610FD /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -223,7 +270,34 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		97D6F5465E026F8DE85FE91D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B87D045DF6D518AB0382877B /* Radcap */;
+			targetProxy = E26A1352DDD460A7EB0CA2C9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		0D6F814A5840C46A47C8834E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap.tests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Radcap.app/Contents/MacOS/Radcap";
+			};
+			name = Debug;
+		};
 		11D5116D13AC0F2193588A00 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -232,7 +306,7 @@
 				CODE_SIGN_ENTITLEMENTS = Radcap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = MX6K4V7DP6;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -241,7 +315,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5;
@@ -304,25 +378,44 @@
 			};
 			name = Release;
 		};
+		6257F0845FB064079A78F71A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap.tests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Radcap.app/Contents/MacOS/Radcap";
+			};
+			name = Release;
+		};
 		F91684BBE2B76B9D5359AE16 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Radcap.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = MX6K4V7DP6;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_TESTABILITY = YES;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sfegette.radcap;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5;
@@ -400,6 +493,15 @@
 			buildConfigurations = (
 				F91684BBE2B76B9D5359AE16 /* Debug */,
 				11D5116D13AC0F2193588A00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D3EB0FB6EC581A88F179B0C9 /* Build configuration list for PBXNativeTarget "RadcapTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D6F814A5840C46A47C8834E /* Debug */,
+				6257F0845FB064079A78F71A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
