@@ -464,27 +464,13 @@ final class CaptureManager: NSObject, ObservableObject {
             }
         }
 
-        // Audio writer input — MP4 container requires AAC; WAV (Linear PCM) is incompatible.
-        let aSettings: [String: Any]
-        let useLinearPCM = AppSettings.shared.audioFormat == .wav
-            && !(recordingMode != .audioOnly && AppSettings.shared.videoFormat == .mp4)
-        if useLinearPCM {
-            aSettings = [
-                AVFormatIDKey:                kAudioFormatLinearPCM,
-                AVSampleRateKey:              44100.0,
-                AVNumberOfChannelsKey:        2,
-                AVLinearPCMBitDepthKey:    32,
-                AVLinearPCMIsFloatKey:     true,
-                AVLinearPCMIsBigEndianKey: false
-            ]
-        } else {
-            aSettings = [
-                AVFormatIDKey:          kAudioFormatMPEG4AAC,
-                AVSampleRateKey:        44100.0,
-                AVNumberOfChannelsKey:  2,
-                AVEncoderBitRateKey:    256_000
-            ]
-        }
+        // Use the capture output's recommended settings for this container.
+        // Hardcoded LPCM/AAC settings caused two bugs: (1) AVAssetWriterInput throws an
+        // uncaught NSException when settings are unsupported by the chosen container — the
+        // crash in v1.0.3; (2) hardcoded 44.1 kHz doesn't match typical mic output (48 kHz),
+        // silently dropping audio frames. recommendedAudioSettingsForAssetWriter returns
+        // container-correct, mic-compatible settings that never trigger the exception.
+        let aSettings = audioDataOutput.recommendedAudioSettingsForAssetWriter(writingTo: fileType)
         let ai = AVAssetWriterInput(mediaType: .audio, outputSettings: aSettings)
         ai.expectsMediaDataInRealTime = true
         guard writer.canAdd(ai) else {

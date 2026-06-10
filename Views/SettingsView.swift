@@ -52,7 +52,7 @@ struct SettingsView: View {
                         .help("Container format for video recordings (MOV and MP4 both use H.264)")
                         .accessibilityLabel("Video Format")
                     }
-                    LabeledContent("Audio Format") {
+                    LabeledContent("Audio-only Format") {
                         Picker("", selection: $settings.audioFormat) {
                             ForEach(AppSettings.AudioFormat.allCases) { f in
                                 Text(f.rawValue).tag(f)
@@ -60,7 +60,7 @@ struct SettingsView: View {
                         }
                         .labelsHidden()
                         .help("Audio format used when recording in Audio Only mode")
-                        .accessibilityLabel("Audio Format")
+                        .accessibilityLabel("Audio-only Format")
                     }
                 }
 
