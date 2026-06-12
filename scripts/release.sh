@@ -92,20 +92,8 @@ tracker_report_started() {
   started_at=$(date -u '+%Y-%m-%d %H:%M:%S')
   sha=$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo "")
   branch=$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main")
-  tracker_post "$(VERSION="$VERSION" SHA="$sha" BRANCH="$branch" \
-    DEPLOY_ID="$TRACKER_DEPLOY_ID" STARTED_AT="$started_at" python3 -c "
-import json, os
-print(json.dumps({
-    'repo_name':    'radcap',
-    'build_type':   'release',
-    'version_tag':  'v' + os.environ['VERSION'],
-    'commit_hash':  os.environ['SHA'],
-    'branch':       os.environ['BRANCH'],
-    'deploy_id':    os.environ['DEPLOY_ID'],
-    'started_at':   os.environ['STARTED_AT'],
-    'status':       'started',
-    'triggered_by': 'release.sh',
-}))")"
+  tracker_post "$(printf '{"repo_name":"radcap","build_type":"release","version_tag":"v%s","commit_hash":"%s","branch":"%s","deploy_id":"%s","started_at":"%s","status":"started","triggered_by":"release.sh"}' \
+    "$VERSION" "$sha" "$branch" "$TRACKER_DEPLOY_ID" "$started_at")"
   tracker_started=true
   echo "▶ Build tracker: reported start (deploy_id ${TRACKER_DEPLOY_ID})"
 }
@@ -116,16 +104,8 @@ tracker_report_success() {
   local finished_at duration
   finished_at=$(date -u '+%Y-%m-%d %H:%M:%S')
   duration=$(( $(date -u +%s) - TRACKER_STARTED_TS ))
-  tracker_post "$(VERSION="$VERSION" DEPLOY_ID="$TRACKER_DEPLOY_ID" \
-    FINISHED_AT="$finished_at" DURATION="$duration" python3 -c "
-import json, os
-print(json.dumps({
-    'deploy_id':        os.environ['DEPLOY_ID'],
-    'status':           'success',
-    'finished_at':      os.environ['FINISHED_AT'],
-    'duration_seconds': int(os.environ['DURATION']),
-    'artifact_url':     'https://github.com/sfegette/radcap/releases/tag/v' + os.environ['VERSION'],
-}))")"
+  tracker_post "$(printf '{"deploy_id":"%s","status":"success","finished_at":"%s","duration_seconds":%s,"artifact_url":"https://github.com/sfegette/radcap/releases/tag/v%s"}' \
+    "$TRACKER_DEPLOY_ID" "$finished_at" "$duration" "$VERSION")"
   tracker_final=true
   echo "✅ Build tracker: reported success"
 }
@@ -136,15 +116,8 @@ tracker_report_failed() {
   local finished_at duration
   finished_at=$(date -u '+%Y-%m-%d %H:%M:%S')
   duration=$(( $(date -u +%s) - TRACKER_STARTED_TS ))
-  tracker_post "$(DEPLOY_ID="$TRACKER_DEPLOY_ID" FINISHED_AT="$finished_at" \
-    DURATION="$duration" python3 -c "
-import json, os
-print(json.dumps({
-    'deploy_id':        os.environ['DEPLOY_ID'],
-    'status':           'failed',
-    'finished_at':      os.environ['FINISHED_AT'],
-    'duration_seconds': int(os.environ['DURATION']),
-}))")"
+  tracker_post "$(printf '{"deploy_id":"%s","status":"failed","finished_at":"%s","duration_seconds":%s}' \
+    "$TRACKER_DEPLOY_ID" "$finished_at" "$duration")"
   tracker_final=true
   echo "✗ Build tracker: reported failure"
 }
@@ -257,18 +230,24 @@ if $DO_NDD; then
       echo "⚠️  gh CLI not found — skipping GitHub Release. Install with: brew install gh"
     else
       TAG="v$VERSION"
-      echo "▶ Creating GitHub Release $TAG..."
-      gh release create "$TAG" "$DMG" \
-        --repo sfegette/radcap \
-        --title "Radcap $VERSION" \
-        --notes "## Radcap $VERSION
+      if gh release view "$TAG" --repo sfegette/radcap &>/dev/null; then
+        echo "⚠️  Release $TAG already exists — uploading DMG to existing release"
+        gh release upload "$TAG" "$DMG" --repo sfegette/radcap --clobber
+        echo "✅ DMG uploaded to existing GitHub Release $TAG"
+      else
+        echo "▶ Creating GitHub Release $TAG..."
+        gh release create "$TAG" "$DMG" \
+          --repo sfegette/radcap \
+          --title "Radcap $VERSION" \
+          --notes "## Radcap $VERSION
 
 ### Install
 Download \`Radcap-$VERSION.dmg\`, open it, and drag Radcap to Applications.
 
 macOS will verify the app on first launch — if prompted, right-click → Open." \
-        --latest
-      echo "✅ GitHub Release $TAG published"
+          --latest
+        echo "✅ GitHub Release $TAG published"
+      fi
     fi
   fi
 
