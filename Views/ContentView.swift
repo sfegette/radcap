@@ -28,12 +28,12 @@ struct ContentView: View {
             previewSection
             Divider()
             TeleprompterView(isScrolling: $teleprompterScrolling, isEditing: $isEditing)
-                .frame(maxWidth: .infinity, minHeight: 180)
+                .frame(maxWidth: .infinity, minHeight: 220)
                 .environmentObject(settings)
             Divider()
             controlsSection
         }
-        .frame(minWidth: 340, minHeight: 520)
+        .frame(minWidth: 340, minHeight: 560)
         .background(reduceTransparency ? AnyShapeStyle(Color(nsColor: .windowBackgroundColor)) : AnyShapeStyle(.ultraThinMaterial),
                     in: RoundedRectangle(cornerRadius: 18))
         .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -233,14 +233,14 @@ struct ContentView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: captureManager.isRecording ? "stop.circle.fill" : (coordinator.isCountingDown ? "timer" : "record.circle.fill"))
-                    .foregroundColor(captureManager.isRecording ? .primary : .red)
+                    .foregroundStyle(captureManager.isRecording ? Color.white.opacity(0.9) : Color.red)
                 Text(captureManager.isRecording ? "Stop" : (coordinator.isCountingDown ? "Starting…" : "Record"))
                     .fontWeight(.semibold)
+                    .foregroundStyle(captureManager.isRecording ? Color.white : Color.primary)
             }
             .frame(minWidth: 90)
         }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
+        .buttonStyle(RecordButtonStyle(isRecording: captureManager.isRecording))
         .keyboardShortcut("r", modifiers: [.command, .option])
         .disabled((!captureManager.sessionRunning && !captureManager.isRecording) || coordinator.isCountingDown)
     }
@@ -384,5 +384,27 @@ struct TeleprompterFormatPopover: View {
                 .filter { !$0.hasPrefix(".") }
                 .sorted()
         }
+    }
+}
+
+// MARK: - Record button style
+
+private struct RecordButtonStyle: ButtonStyle {
+    let isRecording: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                isRecording ? Color.red : Color(nsColor: .controlBackgroundColor),
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+            )
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }

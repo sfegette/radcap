@@ -14,6 +14,8 @@ struct TeleprompterView: View {
 
             if isEditing {
                 editingView
+            } else if settings.teleprompterText.isEmpty {
+                emptyStateView
             } else if isScrolling {
                 autoScrollView
             } else {
@@ -33,6 +35,33 @@ struct TeleprompterView: View {
 
     // MARK: - Subviews
 
+    private var emptyStateView: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+                    .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 8))
+                Image(systemName: "textformat")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.quaternary)
+                Image(systemName: "play.circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.quaternary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 10))
+
+            Text("Click the edit icon to paste\nor type your script")
+                .font(.callout)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var editingView: some View {
         TextEditor(text: $settings.teleprompterText)
             .font(styledFont)
@@ -48,9 +77,9 @@ struct TeleprompterView: View {
 
     private var autoScrollView: some View {
         GeometryReader { proxy in
-            Text(settings.teleprompterText.isEmpty ? "Tap Edit to add your script…" : settings.teleprompterText)
+            Text(settings.teleprompterText)
                 .font(styledFont)
-                .foregroundColor(settings.teleprompterText.isEmpty ? .secondary : .primary)
+                .foregroundColor(.primary)
                 .multilineTextAlignment(textAlignment)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding()
@@ -62,9 +91,9 @@ struct TeleprompterView: View {
     }
 
     private var scriptText: some View {
-        Text(settings.teleprompterText.isEmpty ? "Tap Edit to add your script…" : settings.teleprompterText)
+        Text(settings.teleprompterText)
             .font(styledFont)
-            .foregroundColor(settings.teleprompterText.isEmpty ? .secondary : .primary)
+            .foregroundColor(.primary)
             .multilineTextAlignment(textAlignment)
             .frame(maxWidth: .infinity, alignment: frameAlignment)
             .padding()

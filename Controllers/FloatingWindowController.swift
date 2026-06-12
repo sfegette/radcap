@@ -43,7 +43,7 @@ final class FloatingWindowController {
         hosting.view.layer?.masksToBounds = true
 
         let p = GlassPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 620),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 660),
             styleMask: [.borderless, .nonactivatingPanel, .utilityWindow],
             backing: .buffered,
             defer: false
