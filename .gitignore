@@ -2,7 +2,10 @@
 *.xcodeproj/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcworkspace/xcuserdata/
+*.xcuserstate
 DerivedData/
+.derivedData/
+*.xcarchive/
 *.ipa
 *.dSYM.zip
 *.dSYM
@@ -28,3 +31,43 @@ __MACOSX/
 
 # Instruments
 *.trace
+
+# Local AI assistant and agent state
+# Keep instructions, worktrees, transcripts, and tool-specific settings out of
+# the public repository. Project documentation belongs in README.md or docs/.
+CLAUDE.md
+AGENTS.md
+CODEX*.md
+.claude/
+.codex/
+.agents/
+.cursor/
+.aider/
+.continue/
+.windsurf/
+
+# Local-only release automation and operational notes
+# Store these in a separate private operations repository when they must be
+# shared; never force-add them here.
+scripts/release.sh
+.github/workflows/agent-dispatch.yml
+.github/workflows/release.yml
+public/CODEX_*.md
+.private/
+
+# Secrets, credentials, provisioning, and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.crt
+*.credentials
+*.secret
+*.secrets
+keychain-*.db
