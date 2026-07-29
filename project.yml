@@ -1,4 +1,8 @@
 name: Radcap
+configs:
+  Debug: debug
+  DebugApp: debug
+  Release: release
 options:
   bundleIdPrefix: com.sfegette
   deploymentTarget:
@@ -19,8 +23,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sfegette.radcap
-        MARKETING_VERSION: "1.0.5"
-        CURRENT_PROJECT_VERSION: "17"
+        MARKETING_VERSION: "1.0.6"
+        CURRENT_PROJECT_VERSION: "18"
         MACOSX_DEPLOYMENT_TARGET: "14.0"
         SWIFT_VERSION: "5"
         INFOPLIST_FILE: Info.plist
@@ -33,6 +37,8 @@ targets:
       configs:
         Debug:
           ENABLE_TESTABILITY: YES
+        DebugApp:
+          ENABLE_TESTABILITY: NO
 
   RadcapTests:
     type: bundle.unit-test
@@ -50,3 +56,34 @@ targets:
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Radcap.app/Contents/MacOS/Radcap
         BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Radcap:
+    build:
+      targets:
+        Radcap: all
+        RadcapTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: RadcapTests
+    analyze:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release
+  RadcapApp:
+    build:
+      targets:
+        Radcap: all
+    run:
+      config: DebugApp
+    analyze:
+      config: DebugApp
+    profile:
+      config: Release
+    archive:
+      config: Release
