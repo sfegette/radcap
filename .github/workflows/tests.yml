@@ -10,8 +10,11 @@ jobs:
   test:
     strategy:
       fail-fast: false
+      # macos-14 is excluded: that runner image's Xcode (15.4) can't open the project
+      # file format the currently-installed XcodeGen generates (needs Xcode 16+).
+      # App deploymentTarget stays macOS 14.0 regardless — this is just the CI matrix.
       matrix:
-        runner: [macos-14, macos-15, macos-26]
+        runner: [macos-15, macos-26]
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -27,10 +30,15 @@ jobs:
 
       - name: Run unit tests
         run: |
+          # The two camera/mic recording tests need real hardware and aren't
+          # reachable via CI=true inside the xcodebuild-spawned test host, so
+          # they're excluded explicitly rather than relying on env propagation.
           xcodebuild test \
             -project Radcap.xcodeproj \
             -scheme Radcap \
             -configuration Debug \
             -destination 'platform=macOS' \
+            -skip-testing:RadcapTests/RecordingFunctionalTests/testRecordMOVClipWithAudio \
+            -skip-testing:RadcapTests/RecordingFunctionalTests/testRecordMP4ClipWithAudio \
             CODE_SIGNING_ALLOWED=NO \
             | xcpretty && exit ${PIPESTATUS[0]}
