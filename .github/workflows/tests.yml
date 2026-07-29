@@ -10,18 +10,25 @@ jobs:
   test:
     strategy:
       fail-fast: false
+      # Each hosted image's *default* Xcode drifts independently over time (macos-14
+      # defaults to 15.4 despite also bundling 16.1/16.2). Apple's Xcode version scheme
+      # also tracks the OS year now (16.x on macos-14/15, 26.x on macos-26), so there's
+      # no single Xcode version installed on all three images — pin the highest one
+      # available on each explicitly rather than trusting whatever's default.
       matrix:
-        runner: [macos-14, macos-15, macos-26]
+        include:
+          - runner: macos-14
+            xcode: "16.2"
+          - runner: macos-15
+            xcode: "16.4"
+          - runner: macos-26
+            xcode: "26.6"
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
-      # Every hosted image's *default* Xcode drifts independently over time (macos-14
-      # defaults to 15.4 despite also bundling 16.1/16.2; macos-15/26 default to newer
-      # still). Pin explicitly to the highest version common to all three images rather
-      # than relying on whatever each one happens to default to.
-      - name: Select Xcode 16.2
-        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+      - name: Select Xcode ${{ matrix.xcode }}
+        run: sudo xcode-select -s "/Applications/Xcode_${{ matrix.xcode }}.app"
 
       - name: Install XcodeGen
         run: brew install xcodegen
