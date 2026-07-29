@@ -52,7 +52,7 @@ CODEX*.md
 scripts/release.sh
 .github/workflows/agent-dispatch.yml
 .github/workflows/release.yml
-public/CODEX_*.md
+public/
 .private/
 
 # Secrets, credentials, provisioning, and local configuration
