@@ -57,10 +57,14 @@ final class RecordingFunctionalTests: XCTestCase {
     // MARK: - Functional recording tests (requires camera + microphone access)
 
     func testRecordMOVClipWithAudio() throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["CI"] != nil,
+                      "No camera/mic available on hosted CI runners")
         try recordAndVerify(videoFormat: .mov)
     }
 
     func testRecordMP4ClipWithAudio() throws {
+        try XCTSkipIf(ProcessInfo.processInfo.environment["CI"] != nil,
+                      "No camera/mic available on hosted CI runners")
         try recordAndVerify(videoFormat: .mp4)
     }
 

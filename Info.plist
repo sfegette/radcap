@@ -32,5 +32,9 @@
     <string>Copyright © 2026 sfegette. All rights reserved.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>SUFeedURL</key>
+    <string>https://sfegette.github.io/radcap/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>fJK/OL32PLKvHm8WpkGgoYUW7z2Mkls/FXN4lpPzbBM=</string>
 </dict>
 </plist>

@@ -1,5 +1,8 @@
 import AppKit
 import Combine
+#if !MAS_BUILD
+import Sparkle
+#endif
 
 final class StatusBarController {
     private let statusItem: NSStatusItem
@@ -7,6 +10,9 @@ final class StatusBarController {
 
     var onToggleWindow: (() -> Void)?
     weak var coordinator: RecordingCoordinator?
+    #if !MAS_BUILD
+    weak var updaterController: SPUStandardUpdaterController?
+    #endif
 
     init(captureManager: CaptureManager) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -64,6 +70,19 @@ final class StatusBarController {
         let windowItem = NSMenuItem(title: "Show / Hide Window", action: #selector(toggleWindow), keyEquivalent: "")
         windowItem.target = self
         menu.addItem(windowItem)
+
+        #if !MAS_BUILD
+        if let updaterController {
+            menu.addItem(.separator())
+            let updateItem = NSMenuItem(
+                title: "Check for Updates…",
+                action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+                keyEquivalent: ""
+            )
+            updateItem.target = updaterController
+            menu.addItem(updateItem)
+        }
+        #endif
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Radcap", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))

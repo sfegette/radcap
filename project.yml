@@ -9,6 +9,11 @@ options:
     macOS: "14.0"
   createIntermediateGroups: true
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.6.0"
+
 targets:
   Radcap:
     type: application
@@ -20,6 +25,9 @@ targets:
       - path: Views
       - path: Models
       - path: Assets.xcassets
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sfegette.radcap
@@ -56,6 +64,8 @@ targets:
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/Radcap.app/Contents/MacOS/Radcap
         BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: MX6K4V7DP6
 
 schemes:
   Radcap:
