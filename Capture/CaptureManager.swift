@@ -421,8 +421,12 @@ final class CaptureManager: NSObject, ObservableObject {
 
         let outputURL = generateOutputURL()
         let fileType: AVFileType = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.avFileType : AppSettings.shared.videoFormat.avFileType
+        let outputFile = outputURL.lastPathComponent
+
+        log.info("Preparing writer for \(outputFile, privacy: .public) mode=\(self.recordingMode.rawValue, privacy: .public) type=\(fileType.rawValue, privacy: .public) source=\(sourceDims.width)x\(sourceDims.height) output=\(outDims.width)x\(outDims.height)")
 
         guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: fileType) else {
+            log.error("AVAssetWriter init failed for \(outputFile, privacy: .public) type=\(fileType.rawValue, privacy: .public)")
             DispatchQueue.main.async { self.lastError = "Could not create output file at \(outputURL.path)." }
             return false
         }
@@ -442,6 +446,7 @@ final class CaptureManager: NSObject, ObservableObject {
                     AVVideoMaxKeyFrameIntervalKey:   30
                 ] as [String: Any]
             ]
+            log.debug("Video writer settings for \(outputFile, privacy: .public): \(String(describing: vSettings), privacy: .public)")
             let vi = AVAssetWriterInput(mediaType: .video, outputSettings: vSettings)
             vi.expectsMediaDataInRealTime = true
             if writer.canAdd(vi) {
@@ -459,6 +464,7 @@ final class CaptureManager: NSObject, ObservableObject {
             }
 
             guard vInput != nil else {
+                log.error("writer.canAdd(video) returned false for \(outputFile, privacy: .public) type=\(fileType.rawValue, privacy: .public)")
                 DispatchQueue.main.async { self.lastError = "Could not configure video encoding for the recording." }
                 return false
             }
@@ -471,20 +477,25 @@ final class CaptureManager: NSObject, ObservableObject {
         // silently dropping audio frames. recommendedAudioSettingsForAssetWriter returns
         // container-correct, mic-compatible settings that never trigger the exception.
         let aSettings = audioDataOutput.recommendedAudioSettingsForAssetWriter(writingTo: fileType)
+        log.debug("Audio writer settings for \(outputFile, privacy: .public): \(String(describing: aSettings), privacy: .public)")
         let ai = AVAssetWriterInput(mediaType: .audio, outputSettings: aSettings)
         ai.expectsMediaDataInRealTime = true
         guard writer.canAdd(ai) else {
+            log.error("writer.canAdd(audio) returned false for \(outputFile, privacy: .public) type=\(fileType.rawValue, privacy: .public) settings=\(String(describing: aSettings), privacy: .public)")
             DispatchQueue.main.async { self.lastError = "Could not configure audio encoding for the recording." }
             return false
         }
         writer.add(ai)
 
         guard writer.startWriting() else {
+            log.error("writer.startWriting failed for \(outputFile, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public) error=\(writer.error?.localizedDescription ?? "none", privacy: .public)")
             DispatchQueue.main.async {
                 self.lastError = self.writerErrorMessage(prefix: "Could not start recording", writer: writer, outputURL: outputURL)
             }
             return false
         }
+
+        log.info("Writer started for \(outputFile, privacy: .public) type=\(fileType.rawValue, privacy: .public)")
 
         outputQueue.async { [weak self] in
             guard let self else { return }
@@ -530,6 +541,7 @@ final class CaptureManager: NSObject, ObservableObject {
             self.audioWriterInput   = nil
             self.pixelBufferAdaptor = nil
             self.sessionStarted     = false
+            log.info("Stopping writer for \(outputURL?.lastPathComponent ?? "unknown", privacy: .public) status=\(self.writerStatusDescription(writer?.status), privacy: .public)")
             switch writer?.status {
             case .some(.writing):
                 writer?.finishWriting { [weak self] in self?.handleWriterCompletion(writer, outputURL: outputURL) }
@@ -666,7 +678,7 @@ final class CaptureManager: NSObject, ObservableObject {
         guard let writer else { return }
         switch writer.status {
         case .completed:
-            log.info("Recording finalized: \(outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent)")
+            log.info("Recording finalized: \(outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public)")
         case .failed:
             publishWriterFailureIfNeeded(writerErrorMessage(prefix: "Recording could not be saved", writer: writer, outputURL: outputURL))
         case .cancelled:
@@ -684,6 +696,18 @@ final class CaptureManager: NSObject, ObservableObject {
         let file = outputURL?.lastPathComponent ?? writer.outputURL.lastPathComponent
         if let err = writer.error?.localizedDescription, !err.isEmpty { return "\(prefix) for \(file): \(err)" }
         return "\(prefix) for \(file)."
+    }
+
+    private func writerStatusDescription(_ status: AVAssetWriter.Status?) -> String {
+        switch status {
+        case .some(.unknown): return "unknown"
+        case .some(.writing): return "writing"
+        case .some(.completed): return "completed"
+        case .some(.failed): return "failed"
+        case .some(.cancelled): return "cancelled"
+        case .none: return "nil"
+        @unknown default: return "unknown-default"
+        }
     }
 
     private func publishWriterFailureIfNeeded(_ message: String) {
@@ -741,6 +765,7 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
         if !sessionStarted {
             writer.startSession(atSourceTime: pts)
             sessionStarted = true
+            log.info("Writer session started for \(writer.outputURL.lastPathComponent, privacy: .public) at \(CMTimeGetSeconds(pts), format: .fixed(precision: 3))s")
         }
 
         if output === videoDataOutput {
@@ -749,20 +774,28 @@ extension CaptureManager: AVCaptureVideoDataOutputSampleBufferDelegate,
                   vInput.isReadyForMoreMediaData else { return }
 
             if cropMode == .none {
-                vInput.append(sampleBuffer)
+                if !vInput.append(sampleBuffer) {
+                    log.error("Video append failed for \(writer.outputURL.lastPathComponent, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public) error=\(writer.error?.localizedDescription ?? "none", privacy: .public)")
+                }
             } else if let adaptor = pixelBufferAdaptor,
                       adaptor.assetWriterInput.isReadyForMoreMediaData,
                       let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
                       let cropped = cropPixelBuffer(imageBuffer, to: activeCropRect, using: adaptor.pixelBufferPool) {
-                adaptor.append(cropped, withPresentationTime: pts)
+                if !adaptor.append(cropped, withPresentationTime: pts) {
+                    log.error("Cropped video append failed for \(writer.outputURL.lastPathComponent, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public) error=\(writer.error?.localizedDescription ?? "none", privacy: .public)")
+                }
             } else {
-                vInput.append(sampleBuffer)
+                if !vInput.append(sampleBuffer) {
+                    log.error("Fallback video append failed for \(writer.outputURL.lastPathComponent, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public) error=\(writer.error?.localizedDescription ?? "none", privacy: .public)")
+                }
             }
 
         } else if output === audioDataOutput {
             guard let aInput = audioWriterInput,
                   aInput.isReadyForMoreMediaData else { return }
-            aInput.append(sampleBuffer)
+            if !aInput.append(sampleBuffer) {
+                log.error("Audio append failed for \(writer.outputURL.lastPathComponent, privacy: .public) status=\(self.writerStatusDescription(writer.status), privacy: .public) error=\(writer.error?.localizedDescription ?? "none", privacy: .public)")
+            }
         }
     }
 
