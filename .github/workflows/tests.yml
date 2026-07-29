@@ -10,14 +10,18 @@ jobs:
   test:
     strategy:
       fail-fast: false
-      # macos-14 is excluded: that runner image's Xcode (15.4) can't open the project
-      # file format the currently-installed XcodeGen generates (needs Xcode 16+).
-      # App deploymentTarget stays macOS 14.0 regardless — this is just the CI matrix.
       matrix:
-        runner: [macos-15, macos-26]
+        runner: [macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+
+      # Every hosted image's *default* Xcode drifts independently over time (macos-14
+      # defaults to 15.4 despite also bundling 16.1/16.2; macos-15/26 default to newer
+      # still). Pin explicitly to the highest version common to all three images rather
+      # than relying on whatever each one happens to default to.
+      - name: Select Xcode 16.2
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
 
       - name: Install XcodeGen
         run: brew install xcodegen
