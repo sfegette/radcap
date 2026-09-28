@@ -95,6 +95,9 @@ Open **System Settings → Privacy & Security**, find Camera and Microphone, and
 **The teleprompter isn't scrolling.**
 The teleprompter is voice-activated — it only scrolls while it detects audio. Check that the correct microphone is selected in the setup window and that macOS microphone access is granted. If speech detection feels off, try adjusting **Pre-scroll Pause** in **Settings → Teleprompter**.
 
+**Does Radcap save my teleprompter script?**
+No, not by default. A script stays in memory only until Radcap quits. To save it on this Mac between launches, turn on **Settings → Teleprompter → Save Script Between Launches**. Use **Clear Script Now** to remove the current script and any saved copy.
+
 **I plugged in a new microphone (or camera) but it isn't showing up.**
 Radcap's device lists refresh live — plug in or unplug a device and the picker updates immediately, even while it's open. If you're not seeing it, make sure macOS itself recognizes the device (check Audio MIDI Setup or System Information) and that Radcap has microphone/camera permission in System Settings → Privacy & Security.
 

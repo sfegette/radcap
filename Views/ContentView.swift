@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var teleprompterScrolling = false
     @State private var isEditing = false
     @State private var isHoveringClose = false
+    @FocusState private var isScriptEditorFocused: Bool
 
     @Environment(\.accessibilityReduceTransparency) var reduceTransparency
 
@@ -27,7 +28,12 @@ struct ContentView: View {
             windowChrome
             previewSection
             Divider()
-            TeleprompterView(isScrolling: $teleprompterScrolling, isEditing: $isEditing)
+            TeleprompterView(
+                isScrolling: $teleprompterScrolling,
+                isEditing: $isEditing,
+                isScriptEditorFocused: $isScriptEditorFocused,
+                onEditRequested: beginEditing
+            )
                 .frame(maxWidth: .infinity, minHeight: 220)
                 .environmentObject(settings)
             Divider()
@@ -130,8 +136,12 @@ struct ContentView: View {
                 // Prompter controls — grouped visually
                 HStack(spacing: 6) {
                     Button {
-                        if isEditing { teleprompterScrolling = false }
-                        withAnimation(.easeInOut(duration: 0.15)) { isEditing.toggle() }
+                        if isEditing {
+                            isScriptEditorFocused = false
+                            withAnimation(.easeInOut(duration: 0.15)) { isEditing = false }
+                        } else {
+                            beginEditing()
+                        }
                     } label: {
                         Image(systemName: isEditing ? "checkmark.circle" : "square.and.pencil")
                             .font(.title2)
@@ -221,6 +231,14 @@ struct ContentView: View {
             reduceTransparency ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor)) : AnyShapeStyle(.regularMaterial),
             in: UnevenRoundedRectangle(topLeadingRadius: 0, bottomLeadingRadius: 18, bottomTrailingRadius: 18, topTrailingRadius: 0)
         )
+    }
+
+    private func beginEditing() {
+        teleprompterScrolling = false
+        withAnimation(.easeInOut(duration: 0.15)) { isEditing = true }
+        DispatchQueue.main.async {
+            isScriptEditorFocused = true
+        }
     }
 
     private var recordButton: some View {

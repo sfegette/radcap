@@ -283,11 +283,11 @@ final class CaptureManager: NSObject, ObservableObject {
         alert.informativeText = """
             Radcap's microphone permission has become stale — this can happen after updating, reinstalling, or running diagnostics on the app.
 
-            To fix, open Terminal and run this command:
+            To reset this app's microphone permission, open Terminal and run:
 
-                sudo tccutil reset Microphone com.sfegette.radcap
+                tccutil reset Microphone com.sfegette.radcap
 
-            Then restart your Mac and relaunch Radcap. macOS will prompt for microphone access.
+            Then quit and relaunch Radcap. macOS will prompt for microphone access again.
             """
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Open Terminal")
@@ -419,7 +419,15 @@ final class CaptureManager: NSObject, ObservableObject {
         let outDims  = croppedDimensions(from: sourceDims, mode: cropMode)
         let cropRect = makeCropRect(source: sourceDims, output: outDims)
 
-        let outputURL = generateOutputURL()
+        let outputDirectory = AppSettings.shared.effectiveOutputDirectory
+        if let outputDirectoryError = Self.outputDirectoryValidationError(for: outputDirectory) {
+            let message = "\(outputDirectoryError) Choose another folder in Settings."
+            log.error("Output-directory preflight failed for \(outputDirectory.path, privacy: .public): \(outputDirectoryError, privacy: .public)")
+            lastError = message
+            return false
+        }
+
+        let outputURL = generateOutputURL(in: outputDirectory)
         let fileType: AVFileType = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.avFileType : AppSettings.shared.videoFormat.avFileType
         let outputFile = outputURL.lastPathComponent
 
@@ -582,12 +590,30 @@ final class CaptureManager: NSObject, ObservableObject {
         )
     }
 
-    private func generateOutputURL() -> URL {
+    private func generateOutputURL(in outputDirectory: URL) -> URL {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
         let ext = recordingMode == .audioOnly ? AppSettings.shared.audioFormat.fileExtension : AppSettings.shared.videoFormat.fileExtension
         let name = "Radcap_\(fmt.string(from: Date())).\(ext)"
-        return AppSettings.shared.effectiveOutputDirectory.appendingPathComponent(name)
+        return outputDirectory.appendingPathComponent(name)
+    }
+
+    static func outputDirectoryValidationError(for directory: URL) -> String? {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return "The selected recording folder is unavailable."
+        }
+
+        let probeURL = directory.appendingPathComponent(".radcap-write-probe-\(UUID().uuidString)")
+        guard FileManager.default.createFile(atPath: probeURL.path, contents: Data()) else {
+            return "The selected recording folder is not writable."
+        }
+        do {
+            try FileManager.default.removeItem(at: probeURL)
+            return nil
+        } catch {
+            return "The selected recording folder cannot be cleaned up after writing."
+        }
     }
 
     var durationString: String {

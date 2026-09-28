@@ -3,6 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
+    @State private var showClearScriptConfirmation = false
+    @State private var showTeleprompterPrivacyMigrationNotice = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +85,26 @@ struct SettingsView: View {
                 }
 
                 Section("Teleprompter") {
+                    if showTeleprompterPrivacyMigrationNotice {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Your saved script was kept")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Radcap now keeps scripts only for the current session by default. Your existing script is still saved; turn off Save Script Between Launches anytime to remove it.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                    Toggle("Save Script Between Launches", isOn: $settings.savesTeleprompterText)
+                        .accessibilityHint("Off by default. When off, your script is kept only until Radcap quits.")
+                    Text("Scripts stay on this Mac only when you turn this on. Turn it off to remove the saved copy.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Clear Script Now", role: .destructive) {
+                        showClearScriptConfirmation = true
+                    }
+                    .accessibilityHint("Removes the current script and any saved copy.")
+
                     LabeledContent("Font Size") {
                         HStack {
                             Slider(value: $settings.teleprompterFontSize, in: 16...72, step: 2)
@@ -151,7 +173,23 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 380, height: 520)
+        .frame(width: 380, height: 610)
+        .onAppear {
+            guard settings.shouldShowTeleprompterPrivacyMigrationNotice else { return }
+            showTeleprompterPrivacyMigrationNotice = true
+            settings.markTeleprompterPrivacyMigrationNoticeSeen()
+        }
+        .confirmationDialog(
+            "Clear teleprompter script?",
+            isPresented: $showClearScriptConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Clear Script", role: .destructive) {
+                settings.clearTeleprompterText()
+            }
+        } message: {
+            Text("This removes the current script and any saved copy from this Mac.")
+        }
     }
 
     // MARK: - Piecewise speed binding: 0.25→1.0 in left half, 1.0→2.0 in right half.
@@ -242,4 +280,3 @@ private extension URL {
         (path as NSString).abbreviatingWithTildeInPath
     }
 }
-

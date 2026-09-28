@@ -4,6 +4,8 @@ struct TeleprompterView: View {
     @EnvironmentObject var settings: AppSettings
     @Binding var isScrolling: Bool
     @Binding var isEditing: Bool
+    @FocusState.Binding var isScriptEditorFocused: Bool
+    let onEditRequested: () -> Void
 
     @State private var scrollOffset: CGFloat = 0
     @State private var scrollTimer: Timer?
@@ -38,11 +40,16 @@ struct TeleprompterView: View {
     private var emptyStateView: some View {
         VStack(spacing: 14) {
             HStack(spacing: 10) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 22))
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-                    .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 8))
+                Button(action: onEditRequested) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(.fill.secondary, in: RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .help("Edit script")
+                .accessibilityLabel("Edit script")
                 Image(systemName: "textformat")
                     .font(.system(size: 22))
                     .foregroundStyle(.quaternary)
@@ -65,6 +72,7 @@ struct TeleprompterView: View {
     private var editingView: some View {
         TextEditor(text: $settings.teleprompterText)
             .font(styledFont)
+            .focused($isScriptEditorFocused)
             .scrollContentBackground(.hidden)
             .padding()
     }

@@ -31,6 +31,8 @@ final class AppSettings: ObservableObject {
         static let audioFormat                  = "audioFormat"
         static let videoFormat                  = "videoFormat"
         static let teleprompterText             = "teleprompterText"
+        static let savesTeleprompterText        = "savesTeleprompterText"
+        static let teleprompterPrivacyNoticeSeen = "teleprompterPrivacyNoticeSeen"
         static let teleprompterSpeed            = "teleprompterSpeed"
         static let teleprompterFontSize         = "teleprompterFontSize"
         static let teleprompterPreScrollDelay   = "teleprompterPreScrollDelay"
@@ -64,8 +66,23 @@ final class AppSettings: ObservableObject {
         }
     }
     @Published var teleprompterText: String {
-        didSet { UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText) }
+        didSet {
+            guard savesTeleprompterText else { return }
+            UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText)
+        }
     }
+    @Published var savesTeleprompterText: Bool {
+        didSet {
+            if savesTeleprompterText {
+                UserDefaults.standard.set(true, forKey: Key.savesTeleprompterText)
+                UserDefaults.standard.set(teleprompterText, forKey: Key.teleprompterText)
+            } else {
+                UserDefaults.standard.set(false, forKey: Key.savesTeleprompterText)
+                UserDefaults.standard.removeObject(forKey: Key.teleprompterText)
+            }
+        }
+    }
+    @Published private(set) var shouldShowTeleprompterPrivacyMigrationNotice: Bool
     @Published var teleprompterSpeed: Double {
         didSet { UserDefaults.standard.set(teleprompterSpeed, forKey: Key.teleprompterSpeed) }
     }
@@ -118,7 +135,10 @@ final class AppSettings: ObservableObject {
         } else if let path = UserDefaults.standard.string(forKey: Key.outputDirectoryPath) {
             outputDirectory = URL(fileURLWithPath: path)
         }
-        teleprompterText = UserDefaults.standard.string(forKey: Key.teleprompterText) ?? ""
+        let teleprompterPersistence = Self.teleprompterPersistenceState(defaults: .standard)
+        savesTeleprompterText = teleprompterPersistence.savesText
+        teleprompterText = teleprompterPersistence.text
+        shouldShowTeleprompterPrivacyMigrationNotice = teleprompterPersistence.shouldShowMigrationNotice
         let speed = UserDefaults.standard.double(forKey: Key.teleprompterSpeed)
         teleprompterSpeed = speed > 0 ? min(max(speed, 0.25), 2.0) : 0.7
         let size = UserDefaults.standard.double(forKey: Key.teleprompterFontSize)
@@ -144,5 +164,55 @@ final class AppSettings: ObservableObject {
         if let dir = outputDirectory { return dir }
         let fallbackSearch: FileManager.SearchPathDirectory = AppSettings.isSandboxed ? .moviesDirectory : .desktopDirectory
         return FileManager.default.urls(for: fallbackSearch, in: .userDomainMask)[0]
+    }
+
+    func clearTeleprompterText() {
+        teleprompterText = ""
+        UserDefaults.standard.removeObject(forKey: Key.teleprompterText)
+    }
+
+    func markTeleprompterPrivacyMigrationNoticeSeen() {
+        shouldShowTeleprompterPrivacyMigrationNotice = false
+        UserDefaults.standard.set(true, forKey: Key.teleprompterPrivacyNoticeSeen)
+    }
+
+    struct TeleprompterPersistenceState: Equatable {
+        let savesText: Bool
+        let text: String
+        let shouldShowMigrationNotice: Bool
+    }
+
+    static func teleprompterPersistenceState(defaults: UserDefaults) -> TeleprompterPersistenceState {
+        let hasExplicitPreference = defaults.object(forKey: Key.savesTeleprompterText) != nil
+        let existingText = defaults.string(forKey: Key.teleprompterText) ?? ""
+
+        if hasExplicitPreference {
+            let savesText = defaults.bool(forKey: Key.savesTeleprompterText)
+            if !savesText {
+                defaults.removeObject(forKey: Key.teleprompterText)
+            }
+            return TeleprompterPersistenceState(
+                savesText: savesText,
+                text: savesText ? existingText : "",
+                shouldShowMigrationNotice: false
+            )
+        }
+
+        if !existingText.isEmpty {
+            // Preserve scripts from releases that saved unconditionally. This preference
+            // is explicit from now on, while the one-time UI notice explains the change.
+            defaults.set(true, forKey: Key.savesTeleprompterText)
+            return TeleprompterPersistenceState(
+                savesText: true,
+                text: existingText,
+                shouldShowMigrationNotice: !defaults.bool(forKey: Key.teleprompterPrivacyNoticeSeen)
+            )
+        }
+
+        return TeleprompterPersistenceState(
+            savesText: false,
+            text: "",
+            shouldShowMigrationNotice: false
+        )
     }
 }
