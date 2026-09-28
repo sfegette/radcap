@@ -2,7 +2,7 @@
 
 A macOS menubar app for recording webcam video and audio with a built-in voice-activated teleprompter.
 
-> **Requires macOS 26.0 or later.**
+> **Requires macOS 14.0 or later.**
 
 ---
 
@@ -42,7 +42,7 @@ Grab the latest build from the [Releases](https://github.com/sfegette/radcap/rel
 ## Features
 
 - **Menubar recorder** - lives quietly in the menu bar until you need it; no dock icon
-- **Liquid Glass setup window** - borderless macOS 26 glass panel for camera and script setup
+- **Liquid Glass–style setup window** - borderless glass-effect panel for camera and script setup
 - **3-2-1 countdown** - full-screen overlay with audio ticks before recording starts so you can compose yourself
 - **Voice-activated teleprompter** - script scrolls while it detects your voice, pauses when you go silent, resumes when you speak; halts automatically when the script ends
 - **Teleprompter formatting** - bold/italic toggles, left/center alignment, and a font size slider - all adjustable in the formatting pop-up beneath the prompter; live preview reflects the recording HUD exactly
@@ -114,7 +114,7 @@ Not yet. Download from the [Releases](https://github.com/sfegette/radcap/release
 
 ## Building from Source
 
-**Requirements:** macOS 26 SDK, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen), Apple Developer account
+**Requirements:** macOS 14 SDK or later, Xcode 16+, [XcodeGen](https://github.com/yonaskolb/XcodeGen), Apple Developer account
 
 ```bash
 brew install xcodegen
