@@ -36,5 +36,7 @@
     <string>https://sfegette.github.io/radcap/appcast.xml</string>
     <key>SUPublicEDKey</key>
     <string>fJK/OL32PLKvHm8WpkGgoYUW7z2Mkls/FXN4lpPzbBM=</string>
+    <key>SUEnableSystemProfiling</key>
+    <false/>
 </dict>
 </plist>
