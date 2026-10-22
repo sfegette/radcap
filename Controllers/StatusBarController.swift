@@ -85,6 +85,10 @@ final class StatusBarController {
         #endif
 
         menu.addItem(.separator())
+        let diagnosticsItem = NSMenuItem(title: "Copy Diagnostics", action: #selector(copyDiagnostics), keyEquivalent: "")
+        diagnosticsItem.target = self
+        menu.addItem(diagnosticsItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Radcap", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
@@ -93,6 +97,7 @@ final class StatusBarController {
     }
 
     @objc private func toggleWindow()  { onToggleWindow?() }
+    @objc private func copyDiagnostics() { MainActor.assumeIsolated { DiagnosticsReport.copyToPasteboard() } }
     @objc private func stopRecording() { coordinator?.stopFlow() }
 
     // MARK: - Icon
